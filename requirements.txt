@@ -1,0 +1,10 @@
+gliner==0.2.16
+ipykernel==6.29.5
+langchain-text-splitters==0.3.6
+litellm==1.61.15
+pipdeptree==2.25.0
+pipreqs==0.5.0
+pyvis==0.3.2
+setuptools==59.6.0
+tinycss2==1.4.0
+wikipedia==1.4.0
