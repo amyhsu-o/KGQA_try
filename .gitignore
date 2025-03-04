@@ -1,0 +1,6 @@
+.vscode
+lib
+venv
+
+test.ipynb
+test_*
