@@ -56,7 +56,7 @@ def chunk_page_content(title: str, page_content: str) -> list[str]:
     return chunks
 
 
-def merge_entities(text, entities):
+def merge_entities(text: str, entities: list[dict[str, any]]) -> list[dict[str, any]]:
     if not entities:
         return []
     merged = []
@@ -104,6 +104,7 @@ def extract_entities(
             chunk_entities = set()
 
             for entity in entities:
+                entity["text"] = entity["text"].lower()
                 chunk_entities.add(entity["text"])
                 if entity["text"] in duplicates:
                     continue
@@ -127,10 +128,6 @@ def classify_entities(entity_list: list[str], labels: list[str]) -> dict[list[st
         labels_entities[o].add(s)
 
     return labels_entities
-
-
-def format_entities(ent_list: list[str]) -> str:
-    return "\n\n".join(ent_list)
 
 
 def extract_json_list(response: str) -> list[str]:
@@ -163,7 +160,11 @@ def extract_triples(
             {{"subject": "Hayao Miyazaki", "relationship": "is", "object": "Japanese animator"}}]
         </Examples>
 
-        - ONLY return triples and nothing else. None of "subject", "relationship" and "object" can be empty.
+        Note:
+        1. ONLY return triples and nothing else. 
+        2. None of "subject", "relationship" and "object" can be empty. 
+        3. "Subject" and "object" should be a string and if it appears in entities list, please follow the text used in entities list.
+        4. If many entities match, please write them separately into several triples.
 
         Entities: \n\n{entities}"""
 
@@ -175,7 +176,7 @@ def extract_triples(
         for i in tqdm(range(len(chunks_entities))):
             try:
                 text = chunks[i]
-                ents = format_entities(chunks_entities[i])
+                ents = "\n\n".join(chunks_entities[i])
 
                 response = (
                     completion(
@@ -195,11 +196,34 @@ def extract_triples(
                 )
 
                 triples = extract_json_list(response)
-                chunks_triples.append(triples)
+                additional_triples = []
+                for idx, triple in enumerate(triples):
+                    for key in triple:
+                        print(triples[idx])
+                        if triples[idx][key] is None:
+                            continue
+                        elif isinstance(triples[idx][key], list):
+                            for item in triples[idx][key]:
+                                additional_triples.append(
+                                    {
+                                        "subject": triple["subject"],
+                                        "relationship": triple["relationship"],
+                                        "object": item.lower(),
+                                    }
+                                )
+                        else:
+                            triples[idx][key] = triples[idx][key].lower()
+                chunks_triples.append(triples + additional_triples)
+
+                logging.info(f"Chunks: {text}")
+                logging.info(f"Entities: {'; '.join(chunks_entities[i])}")
+                logging.info(f"Triples: {triples}")
             except JSONDecodeError as e:
-                logging.info(f"{e} in chunk {i}")
                 errors.append(response)
                 chunks_triples.append([])
+
+                logging.info(f"Chunks: {text}")
+                logging.info(f"{e} in chunk {i}")
 
         with open(TRIPLES_PATH, "w") as f:
             json.dump(chunks_triples, f, indent=4)
@@ -271,7 +295,14 @@ def draw_graph(
                     size=get_size(node2, labels_entities),
                     label=str(node2),
                 )
-                G.add_edge(node1, node2, title=str(item["relationship"]), weight=4)
+                G.add_edge(
+                    node1,
+                    node2,
+                    title=str(item["relationship"]),
+                    weight=4,
+                    head=str(node1),
+                    tail=str(node2),
+                )
             except Exception:
                 logging.info(f"Error in item: {item}")
 
