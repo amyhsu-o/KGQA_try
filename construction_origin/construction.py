@@ -20,7 +20,7 @@ def create_dir(title: str) -> None:
 
 
 def load_wikipedia_page(title: str) -> str:
-    PAGE_CONTENT_PATH = f"./{''.join(title.split(' '))}/page.txt"
+    PAGE_CONTENT_PATH = f"./{''.join(title.split(' '))}/construction/page.txt"
     if os.path.exists(PAGE_CONTENT_PATH):
         logging.info("load page content from file")
 
@@ -37,7 +37,7 @@ def load_wikipedia_page(title: str) -> str:
 
 
 def chunk_page_content(title: str, page_content: str) -> list[str]:
-    CHUNKS_PATH = f"./{''.join(title.split(' '))}/chunks.txt"
+    CHUNKS_PATH = f"./{''.join(title.split(' '))}/construction/chunks.txt"
     if os.path.exists(CHUNKS_PATH):
         logging.info("load chunks from file")
 
@@ -81,8 +81,10 @@ def extract_entities(
     title: str, chunks: list[str], labels: list[str]
 ) -> tuple[list[str], list[list[str]]]:
     """by NER model"""
-    ENTITY_LIST_PATH = f"./{''.join(title.split(' '))}/entities.txt"
-    CHUNKS_ENTITIES_PATH = f"./{''.join(title.split(' '))}/chunks_entities.txt"
+    ENTITY_LIST_PATH = f"./{''.join(title.split(' '))}/construction/entities.txt"
+    CHUNKS_ENTITIES_PATH = (
+        f"./{''.join(title.split(' '))}/construction/chunks_entities.txt"
+    )
     if os.path.exists(ENTITY_LIST_PATH) and os.path.exists(CHUNKS_ENTITIES_PATH):
         logging.info("load entities from file")
 
@@ -139,8 +141,8 @@ def extract_triples(
     title: str, chunks: list[str], chunks_entities: list[list[str]]
 ) -> tuple[list[list[str]], list[str]]:
     """given entities output triples -- by LLM"""
-    TRIPLES_PATH = f"./{''.join(title.split(' '))}/chunks_triples.txt"
-    ERRORS_PATH = f"./{''.join(title.split(' '))}/errors.txt"
+    TRIPLES_PATH = f"./{''.join(title.split(' '))}/construction/chunks_triples.txt"
+    ERRORS_PATH = f"./{''.join(title.split(' '))}/construction/errors.txt"
     if os.path.exists(TRIPLES_PATH) and os.path.exists(ERRORS_PATH):
         logging.info("load triples from file")
 
@@ -309,7 +311,7 @@ def draw_graph(
     nt = Network(height="750px", width="100%")
     nt.from_nx(G)
     nt.force_atlas_2based(central_gravity=0.015, gravity=-31)
-    nt.save_graph(f"./{''.join(title.split(' '))}/graph.html")
+    nt.save_graph(f"./{''.join(title.split(' '))}/construction/graph.html")
 
 
 if __name__ == "__main__":
@@ -342,6 +344,8 @@ if __name__ == "__main__":
     ]
 
     create_dir(TITLE)
+    create_dir(f"{TITLE}/construction")
+    create_dir(f"{TITLE}/log")
 
     logging.basicConfig(
         level=logging.INFO,
@@ -349,7 +353,7 @@ if __name__ == "__main__":
         format="%(asctime)s - %(message)s",
         handlers=[
             logging.FileHandler(
-                f"./{''.join(TITLE.split(' '))}/construction.log",
+                f"./{''.join(TITLE.split(' '))}/log/construction.log",
                 mode="w",
             ),
             logging.StreamHandler(),

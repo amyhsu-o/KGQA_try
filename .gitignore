@@ -1,6 +1,7 @@
 .vscode
 lib
 venv
+__pycache__
 
 test.ipynb
 test_*

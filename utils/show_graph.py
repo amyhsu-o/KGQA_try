@@ -8,7 +8,7 @@ def show_graph(path: str) -> None:
     subprocess.Popen(["python", "-m", "http.server", "8888"])
 
     # Open the generated graph in the default web browser
-    webbrowser.open(f"http://localhost:8888/{path}/graph.html")
+    webbrowser.open(f"http://localhost:8888/{path}")
 
 
 if __name__ == "__main__":
