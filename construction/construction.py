@@ -13,35 +13,32 @@ import networkx as nx
 from pyvis.network import Network
 
 
-def create_dir(title: str) -> None:
-    TITLE_DIR = f"./{''.join(title.split(' '))}"
-    if not os.path.exists(TITLE_DIR):
-        os.makedirs(TITLE_DIR)
+def create_dir(path: str) -> None:
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 
-def load_wikipedia_page(title: str) -> str:
-    PAGE_CONTENT_PATH = f"./{''.join(title.split(' '))}/construction/page.txt"
-    if os.path.exists(PAGE_CONTENT_PATH):
+def load_wikipedia_page(title: str, path: str) -> str:
+    if os.path.exists(path):
         logging.info("load page content from file")
 
-        with open(PAGE_CONTENT_PATH, "r") as f:
+        with open(path, "r") as f:
             page_content = f.read()
     else:
         logging.info("load page content from wikipedia")
 
         page_content = wikipedia.page(title=title, auto_suggest=False).content
 
-        with open(PAGE_CONTENT_PATH, "w") as f:
+        with open(path, "w") as f:
             f.write(page_content)
     return page_content
 
 
-def chunk_page_content(title: str, page_content: str) -> list[str]:
-    CHUNKS_PATH = f"./{''.join(title.split(' '))}/construction/chunks.txt"
-    if os.path.exists(CHUNKS_PATH):
+def chunk_page_content(page_content: str, path: str) -> list[str]:
+    if os.path.exists(path):
         logging.info("load chunks from file")
 
-        with open(CHUNKS_PATH, "r") as f:
+        with open(path, "r") as f:
             chunks = json.load(f)
     else:
         logging.info("chunk the page content")
@@ -51,7 +48,7 @@ def chunk_page_content(title: str, page_content: str) -> list[str]:
         )
         chunks = text_splitter.split_text(page_content)
 
-        with open(CHUNKS_PATH, "w") as f:
+        with open(path, "w") as f:
             json.dump(chunks, f, indent=4)
     return chunks
 
@@ -78,19 +75,23 @@ def merge_entities(text: str, entities: list[dict[str, any]]) -> list[dict[str, 
 
 
 def extract_entities(
-    title: str, chunks: list[str], labels: list[str]
+    chunks: list[str],
+    labels: list[str],
+    entity_list_path: str = None,
+    chunks_entities_path: str = None,
 ) -> tuple[list[str], list[list[str]]]:
     """by NER model"""
-    ENTITY_LIST_PATH = f"./{''.join(title.split(' '))}/construction/entities.txt"
-    CHUNKS_ENTITIES_PATH = (
-        f"./{''.join(title.split(' '))}/construction/chunks_entities.txt"
-    )
-    if os.path.exists(ENTITY_LIST_PATH) and os.path.exists(CHUNKS_ENTITIES_PATH):
+    if (
+        entity_list_path
+        and chunks_entities_path
+        and os.path.exists(entity_list_path)
+        and os.path.exists(chunks_entities_path)
+    ):
         logging.info("load entities from file")
 
-        with open(ENTITY_LIST_PATH, "r") as f:
+        with open(entity_list_path, "r") as f:
             entity_list = json.load(f)
-        with open(CHUNKS_ENTITIES_PATH, "r") as f:
+        with open(chunks_entities_path, "r") as f:
             chunks_entities = json.load(f)
     else:
         logging.info("extract entities from chunks")
@@ -115,10 +116,11 @@ def extract_entities(
 
             chunks_entities.append(list(chunk_entities))
 
-        with open(ENTITY_LIST_PATH, "w") as f:
-            json.dump(entity_list, f, indent=4)
-        with open(CHUNKS_ENTITIES_PATH, "w") as f:
-            json.dump(chunks_entities, f, indent=4)
+        if entity_list_path and chunks_entities_path:
+            with open(entity_list_path, "w") as f:
+                json.dump(entity_list, f, indent=4)
+            with open(chunks_entities_path, "w") as f:
+                json.dump(chunks_entities, f, indent=4)
     return entity_list, chunks_entities
 
 
@@ -137,18 +139,35 @@ def extract_json_list(response: str) -> list[str]:
     return [json.loads(json_str) for json_str in json_str_list]
 
 
+def run_llm(messages: list[dict[str, str]]) -> str:
+    response = (
+        completion(
+            model="ollama/phi4",
+            messages=messages,
+            api_base="http://localhost:11435",
+            max_tokens=1000,
+        )
+        .choices[0]
+        .message.content
+    )
+    logging.info(messages[1]["content"])
+    logging.info(response)
+    return response
+
+
 def extract_triples(
-    title: str, chunks: list[str], chunks_entities: list[list[str]]
+    chunks: list[str],
+    chunks_entities: list[list[str]],
+    triples_path: str,
+    errors_path: str,
 ) -> tuple[list[list[str]], list[str]]:
     """given entities output triples -- by LLM"""
-    TRIPLES_PATH = f"./{''.join(title.split(' '))}/construction/chunks_triples.txt"
-    ERRORS_PATH = f"./{''.join(title.split(' '))}/construction/errors.txt"
-    if os.path.exists(TRIPLES_PATH) and os.path.exists(ERRORS_PATH):
+    if os.path.exists(triples_path) and os.path.exists(errors_path):
         logging.info("load triples from file")
 
-        with open(TRIPLES_PATH, "r") as f:
+        with open(triples_path, "r") as f:
             chunks_triples = json.load(f)
-        with open(ERRORS_PATH, "r") as f:
+        with open(errors_path, "r") as f:
             errors = json.load(f)
     else:
         logging.info("extract triples from chunks")
@@ -180,21 +199,14 @@ def extract_triples(
                 text = chunks[i]
                 ents = "\n\n".join(chunks_entities[i])
 
-                response = (
-                    completion(
-                        model="ollama/phi4",
-                        messages=[
-                            {
-                                "content": system_message.format(entities=ents),
-                                "role": "system",
-                            },
-                            {"content": user_message.format(text=text), "role": "user"},
-                        ],
-                        api_base="http://localhost:11435",
-                        max_tokens=1000,
-                    )
-                    .choices[0]
-                    .message.content
+                response = run_llm(
+                    [
+                        {
+                            "content": system_message.format(entities=ents),
+                            "role": "system",
+                        },
+                        {"content": user_message.format(text=text), "role": "user"},
+                    ]
                 )
 
                 triples = extract_json_list(response)
@@ -221,15 +233,15 @@ def extract_triples(
                 logging.info(f"Entities: {'; '.join(chunks_entities[i])}")
                 logging.info(f"Triples: {triples}")
             except JSONDecodeError as e:
-                errors.append(response)
+                errors.append(text)
                 chunks_triples.append([])
 
-                logging.info(f"Chunks: {text}")
-                logging.info(f"{e} in chunk {i}")
+                logging.error(f"Chunks: {text}")
+                logging.error(f"{e} in chunk {i}")
 
-        with open(TRIPLES_PATH, "w") as f:
+        with open(triples_path, "w") as f:
             json.dump(chunks_triples, f, indent=4)
-        with open(ERRORS_PATH, "w") as f:
+        with open(errors_path, "w") as f:
             json.dump(errors, f, indent=4)
 
     return chunks_triples, errors
@@ -274,8 +286,10 @@ def get_size(label: str, labels_entities: dict[str, list[str]]) -> int:
 
 
 def draw_graph(
-    title: str, chunks_triples: list[list[str]], labels_entities: dict[str, list[str]]
-) -> None:
+    chunks_triples: list[list[str]],
+    labels_entities: dict[str, list[str]],
+    path: str = None,
+) -> nx.Graph:
     G = nx.Graph()
 
     for items in chunks_triples:
@@ -306,12 +320,15 @@ def draw_graph(
                     tail=str(node2),
                 )
             except Exception:
-                logging.info(f"Error in item: {item}")
+                logging.error(f"Error in item: {item}")
 
-    nt = Network(height="750px", width="100%")
-    nt.from_nx(G)
-    nt.force_atlas_2based(central_gravity=0.015, gravity=-31)
-    nt.save_graph(f"./{''.join(title.split(' '))}/construction/graph.html")
+    if path:
+        nt = Network(height="750px", width="100%")
+        nt.from_nx(G)
+        nt.force_atlas_2based(central_gravity=0.015, gravity=-31)
+        nt.save_graph(path)
+
+    return G
 
 
 if __name__ == "__main__":
@@ -343,17 +360,22 @@ if __name__ == "__main__":
         "plant",
     ]
 
-    create_dir(TITLE)
-    create_dir(f"{TITLE}/construction")
-    create_dir(f"{TITLE}/log")
+    # paths
+    TITLE_DIR = f"./{''.join(TITLE.split(' '))}"
+    CONSTRUCTION_DIR = f"{TITLE_DIR}/construction"
+    LOG_DIR = f"{TITLE_DIR}/log"
+    create_dir(TITLE_DIR)
+    create_dir(CONSTRUCTION_DIR)
+    create_dir(LOG_DIR)
 
+    # logging
     logging.basicConfig(
         level=logging.INFO,
         datefmt="%Y-%m-%d %H:%M:%S",
-        format="%(asctime)s - %(message)s",
+        format="%(asctime)s - %(levelname)s - %(message)s",
         handlers=[
             logging.FileHandler(
-                f"./{''.join(TITLE.split(' '))}/log/construction.log",
+                f"{LOG_DIR}/construction.log",
                 mode="w",
             ),
             logging.StreamHandler(),
@@ -361,20 +383,32 @@ if __name__ == "__main__":
         force=True,
     )
 
+    # start
     logging.info(f"Start construction for {TITLE}")
 
-    page_content = load_wikipedia_page(TITLE)
+    PAGE_CONTENT_PATH = f"{CONSTRUCTION_DIR}/page.txt"
+    page_content = load_wikipedia_page(TITLE, PAGE_CONTENT_PATH)
 
-    chunks = chunk_page_content(TITLE, page_content)
+    CHUNKS_PATH = f"{CONSTRUCTION_DIR}/chunks.txt"
+    chunks = chunk_page_content(page_content, CHUNKS_PATH)
     logging.info(f"# of chunks: {len(chunks)}")
 
-    entity_list, chunks_entities = extract_entities(TITLE, chunks, LABELS)
+    ENTITY_LIST_PATH = f"{CONSTRUCTION_DIR}/entities.txt"
+    CHUNKS_ENTITIES_PATH = f"{CONSTRUCTION_DIR}/chunks_entities.txt"
+    entity_list, chunks_entities = extract_entities(
+        chunks, LABELS, ENTITY_LIST_PATH, CHUNKS_ENTITIES_PATH
+    )
     logging.info(f"# of entities: {len(entity_list)}")
 
     labels_entities = classify_entities(entity_list, LABELS)
     logging.info({label: len(entities) for label, entities in labels_entities.items()})
 
-    chunks_triples, errors = extract_triples(TITLE, chunks, chunks_entities)
+    TRIPLES_PATH = f"{CONSTRUCTION_DIR}/chunks_triples.txt"
+    ERRORS_PATH = f"{CONSTRUCTION_DIR}/errors.txt"
+    chunks_triples, errors = extract_triples(
+        chunks, chunks_entities, TRIPLES_PATH, ERRORS_PATH
+    )
     logging.info(f"# of triples: {sum(len(triples) for triples in chunks_triples)}")
 
-    draw_graph(TITLE, chunks_triples, labels_entities)
+    GRAPH_PATH = f"{CONSTRUCTION_DIR}/graph.html"
+    draw_graph(chunks_triples, labels_entities, GRAPH_PATH)

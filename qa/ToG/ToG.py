@@ -1,10 +1,7 @@
 import os
-import json
 import re
 import logging
 import argparse
-from tqdm import tqdm
-from gliner import GLiNER
 from litellm import completion
 import networkx as nx
 from pyvis.network import Network
@@ -15,56 +12,12 @@ from prompt import (
     answer_prompt,
     cot_prompt,
 )
-
-
-def merge_entities(text, entities):
-    if not entities:
-        return []
-    merged = []
-    current = entities[0]
-    for next_entity in entities[1:]:
-        if next_entity["label"] == current["label"] and (
-            next_entity["start"] == current["end"] + 1
-            or next_entity["start"] == current["end"]
-        ):
-            current["text"] = text[current["start"] : next_entity["end"]].strip()
-            current["end"] = next_entity["end"]
-        else:
-            merged.append(current)
-            current = next_entity
-
-    # Append the last entity
-    merged.append(current)
-    return merged
-
-
-def extract_entities_for_query(
-    chunks: list[str], labels: list[str]
-) -> tuple[list[str], list[list[str]]]:
-    """by NER model"""
-
-    logging.info("extract entities from chunks")
-
-    model = GLiNER.from_pretrained("numind/NuNerZero")
-    entity_list = []
-    chunks_entities = []
-    duplicates = set()
-
-    for text in tqdm(chunks):
-        entities = model.predict_entities(text, labels, threshold=0.7)
-        entities = merge_entities(text, entities)
-        chunk_entities = set()
-
-        for entity in entities:
-            chunk_entities.add(entity["text"])
-            if entity["text"] in duplicates:
-                continue
-            duplicates.add(entity["text"])
-            entity_list.append((entity["text"], "=>", entity["label"]))
-
-        chunks_entities.append(list(chunk_entities))
-
-    return entity_list, chunks_entities
+from construction.construction import (
+    extract_entities,
+    classify_entities,
+    extract_triples,
+    draw_graph,
+)
 
 
 def run_llm(messages: list[dict[str, str]]) -> str:
@@ -92,125 +45,6 @@ def generate_without_explored_paths(question):
         ]
     )
     return response
-
-
-def extract_entities(path: str) -> tuple[list[str], list[list[str]]]:
-    ENTITY_LIST_PATH = f"{path}/entities.txt"
-    CHUNKS_ENTITIES_PATH = f"{path}/chunks_entities.txt"
-    if os.path.exists(ENTITY_LIST_PATH) and os.path.exists(CHUNKS_ENTITIES_PATH):
-        logging.info("load entities from file")
-
-        with open(ENTITY_LIST_PATH, "r") as f:
-            entity_list = json.load(f)
-        with open(CHUNKS_ENTITIES_PATH, "r") as f:
-            chunks_entities = json.load(f)
-        return entity_list, chunks_entities
-    else:
-        logging.info("entities.txt & chunks_entities.txt not found")
-        return [], []
-
-
-def classify_entities(entity_list: list[str], labels: list[str]) -> dict[list[str]]:
-    labels_entities = {label: set() for label in labels}
-
-    for e in entity_list:
-        s, _, o = e
-        labels_entities[o].add(s)
-
-    return labels_entities
-
-
-def extract_triples(path: str) -> tuple[list[list[str]], list[str]]:
-    """given entities output triples -- by LLM"""
-    TRIPLES_PATH = f"{path}/chunks_triples.txt"
-    ERRORS_PATH = f"{path}/errors.txt"
-    if os.path.exists(TRIPLES_PATH) and os.path.exists(ERRORS_PATH):
-        logging.info("load triples from file")
-
-        with open(TRIPLES_PATH, "r") as f:
-            chunks_triples = json.load(f)
-        with open(ERRORS_PATH, "r") as f:
-            errors = json.load(f)
-        return chunks_triples, errors
-    else:
-        logging.info("chunks_triples.txt & errors.txt not found")
-        return [], []
-
-
-def get_color(label: str, labels_entities: dict[str, list[str]]) -> str:
-    colors = [
-        "orange",
-        "blue",
-        "green",
-        "brown",
-        "red",
-        "purple",
-        "yellow",
-        "pink",
-        "cyan",
-        "magenta",
-        "lime",
-        "teal",
-        "navy",
-        "gold",
-        "silver",
-        "violet",
-        "coral",
-        "indigo",
-        "salmon",
-        "turquoise",
-        "black",
-    ]
-    for idx, label_entities in enumerate(list(labels_entities.values())):
-        if label in label_entities:
-            return colors[idx]
-    return colors[-1]
-
-
-def get_size(label: str, labels_entities: dict[str, list[str]]) -> int:
-    sizes = list(range(40, 0, -2))
-    for idx, label_entities in enumerate(list(labels_entities.values())):
-        if label in label_entities:
-            return sizes[idx]
-    return sizes[-1]
-
-
-def draw_graph(
-    chunks_triples: list[list[str]], labels_entities: dict[str, list[str]]
-) -> nx.Graph:
-    G = nx.Graph()
-
-    for items in chunks_triples:
-        for item in items:
-            try:
-                node1 = item["subject"].lower()
-                node2 = item["object"].lower()
-                G.add_node(
-                    node1,
-                    title=str(node1),
-                    color=get_color(node1, labels_entities),
-                    size=get_size(node1, labels_entities),
-                    label=str(node1),
-                )
-                G.add_node(
-                    node2,
-                    title=str(node2),
-                    color=get_color(node2, labels_entities),
-                    size=get_size(node2, labels_entities),
-                    label=str(node2),
-                )
-                G.add_edge(
-                    node1,
-                    node2,
-                    title=str(item["relationship"]),
-                    weight=4,
-                    head=str(node1),
-                    tail=str(node2),
-                )
-            except Exception as e:
-                logging.error(f"{e} in item: {item}")
-
-    return G
 
 
 def show_adjacent_relations(all_relations: list[dict[str]]) -> None:
@@ -483,25 +317,33 @@ if __name__ == "__main__":
         ],
         force=True,
     )
+    CONSTRUCTION_DIR = f"{DATA_PATH}/construction"
 
     # === Query ===
     question = args.query
-    _, chunks_entities = extract_entities_for_query([question], LABELS)
+    _, chunks_entities = extract_entities([question], LABELS)
     topic_entities = [entity.lower() for entity in chunks_entities[0]]
 
     # === LLM only ===
     response_without_explored_paths = generate_without_explored_paths(question)
 
     # === Create Graph ===
-    entity_list, chunks_entities = extract_entities(f"{DATA_PATH}/construction")
+    ENTITY_LIST_PATH = f"{CONSTRUCTION_DIR}/entities.txt"
+    CHUNKS_ENTITIES_PATH = f"{CONSTRUCTION_DIR}/chunks_entities.txt"
+    entity_list, chunks_entities = extract_entities(
+        [], [], ENTITY_LIST_PATH, CHUNKS_ENTITIES_PATH
+    )
     logging.info(f"# of entities: {len(entity_list)}")
 
     labels_entities = classify_entities(entity_list, LABELS)
     logging.info({label: len(entities) for label, entities in labels_entities.items()})
 
-    chunks_triples, errors = extract_triples(f"{DATA_PATH}/construction")
+    TRIPLES_PATH = f"{CONSTRUCTION_DIR}/chunks_triples.txt"
+    ERRORS_PATH = f"{CONSTRUCTION_DIR}/errors.txt"
+    chunks_triples, errors = extract_triples([], [], TRIPLES_PATH, ERRORS_PATH)
     logging.info(f"# of triples: {sum(len(triples) for triples in chunks_triples)}")
 
+    GRAPH_PATH = f"{CONSTRUCTION_DIR}/graph.html"
     G = draw_graph(chunks_triples, labels_entities)
 
     # === ToG ===
