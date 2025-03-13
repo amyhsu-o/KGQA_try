@@ -288,7 +288,7 @@ LABELS = [
     "plant",
 ]
 
-TOP_K = 10
+TOP_K = 5
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
@@ -464,6 +464,10 @@ if __name__ == "__main__":
             done = extract_answer(response)
         else:
             logging.info("No edges selected")
+            done = True
+
+        if round_count == 20:
+            logging.info("Max round reached")
             done = True
 
         round_count += 1

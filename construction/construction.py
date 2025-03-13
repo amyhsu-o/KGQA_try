@@ -29,7 +29,7 @@ def chunk_page_content(page_content: str, path: str) -> list[str]:
         logging.info("chunk the page content")
 
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=200, chunk_overlap=20, separators=["\n\n", "\n", ". "]
+            chunk_size=600, chunk_overlap=50, separators=["\n\n", "\n", ". "]
         )
         chunks = text_splitter.split_text(page_content)
 
