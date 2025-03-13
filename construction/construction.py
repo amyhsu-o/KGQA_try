@@ -5,33 +5,18 @@ from json import JSONDecodeError
 from tqdm import tqdm
 import logging
 import argparse
-import wikipedia
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from gliner import GLiNER
 from litellm import completion
 import networkx as nx
 from pyvis.network import Network
+from data_loader.wiki import load_wikipedia_page
+from data_loader.crag import load_crag_pages
 
 
 def create_dir(path: str) -> None:
     if not os.path.exists(path):
         os.makedirs(path)
-
-
-def load_wikipedia_page(title: str, path: str) -> str:
-    if os.path.exists(path):
-        logging.info("load page content from file")
-
-        with open(path, "r") as f:
-            page_content = f.read()
-    else:
-        logging.info("load page content from wikipedia")
-
-        page_content = wikipedia.page(title=title, auto_suggest=False).content
-
-        with open(path, "w") as f:
-            f.write(page_content)
-    return page_content
 
 
 def chunk_page_content(page_content: str, path: str) -> list[str]:
@@ -44,7 +29,7 @@ def chunk_page_content(page_content: str, path: str) -> list[str]:
         logging.info("chunk the page content")
 
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=200, chunk_overlap=20, separators=["\n\n", "\n"]
+            chunk_size=200, chunk_overlap=20, separators=["\n\n", "\n", ". "]
         )
         chunks = text_splitter.split_text(page_content)
 
@@ -124,7 +109,7 @@ def extract_entities(
     return entity_list, chunks_entities
 
 
-def classify_entities(entity_list: list[str], labels: list[str]) -> dict[list[str]]:
+def classify_entities(entity_list: list[str], labels: list[str]) -> dict[str, set[str]]:
     labels_entities = {label: set() for label in labels}
 
     for e in entity_list:
@@ -247,6 +232,36 @@ def extract_triples(
     return chunks_triples, errors
 
 
+def run_construction_once(
+    page_content: str,
+    construction_dir: str,
+    labels: list[str],
+    idx: int = 0,
+) -> tuple[list[list[str]], dict[str, set[str]]]:
+    CHUNKS_PATH = f"{construction_dir}/chunks{idx}.txt"
+    chunks = chunk_page_content(page_content, CHUNKS_PATH)
+    logging.info(f"# of chunks: {len(chunks)}")
+
+    ENTITY_LIST_PATH = f"{construction_dir}/entities{idx}.txt"
+    CHUNKS_ENTITIES_PATH = f"{construction_dir}/chunks_entities{idx}.txt"
+    entity_list, chunks_entities = extract_entities(
+        chunks, labels, ENTITY_LIST_PATH, CHUNKS_ENTITIES_PATH
+    )
+    logging.info(f"# of entities: {len(entity_list)}")
+
+    labels_entities = classify_entities(entity_list, labels)
+    logging.info({label: len(entities) for label, entities in labels_entities.items()})
+
+    TRIPLES_PATH = f"{construction_dir}/chunks_triples{idx}.txt"
+    ERRORS_PATH = f"{construction_dir}/errors{idx}.txt"
+    chunks_triples, _ = extract_triples(
+        chunks, chunks_entities, TRIPLES_PATH, ERRORS_PATH
+    )
+    logging.info(f"# of triples: {sum(len(triples) for triples in chunks_triples)}")
+
+    return chunks_triples, labels_entities
+
+
 def get_color(label: str, labels_entities: dict[str, list[str]]) -> str:
     colors = [
         "orange",
@@ -333,10 +348,23 @@ def draw_graph(
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("--title", type=str, required=True)
+    arg_parser.add_argument(
+        "--dataset", type=str, required=True, choices=["crag", "wiki"]
+    )
+    arg_parser.add_argument("--wiki_title", type=str)
+    arg_parser.add_argument("--crag_top_n", type=int)
+    arg_parser.add_argument("--crag_line_id", type=int)
     args = arg_parser.parse_args()
 
-    TITLE = args.title
+    # check whether the arguments are valid
+    if args.dataset == "crag":
+        if args.crag_top_n is None and args.crag_line_id is None:
+            raise ValueError("Please provide either crag_top_n or crag_line_id")
+    elif args.dataset == "wiki":
+        if args.wiki_title is None:
+            raise ValueError("Please provide wiki_title")
+
+    # set labels
     LABELS = [
         "person",
         "organization",
@@ -360,55 +388,93 @@ if __name__ == "__main__":
         "plant",
     ]
 
-    # paths
-    TITLE_DIR = f"./{''.join(TITLE.split(' '))}"
-    CONSTRUCTION_DIR = f"{TITLE_DIR}/construction"
-    LOG_DIR = f"{TITLE_DIR}/log"
-    create_dir(TITLE_DIR)
-    create_dir(CONSTRUCTION_DIR)
-    create_dir(LOG_DIR)
+    global chunks_triples, labels_entities
+    chunks_triples = []
+    labels_entities = {}
 
-    # logging
-    logging.basicConfig(
-        level=logging.INFO,
-        datefmt="%Y-%m-%d %H:%M:%S",
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.FileHandler(
-                f"{LOG_DIR}/construction.log",
-                mode="w",
-            ),
-            logging.StreamHandler(),
-        ],
-        force=True,
-    )
+    if args.dataset == "crag":
+        # load crag pages
+        page_contents_dict = load_crag_pages(args.crag_top_n, args.crag_line_id)
 
-    # start
-    logging.info(f"Start construction for {TITLE}")
+        for line_id, page_contents in page_contents_dict.items():
+            # paths
+            TITLE = f"question_{line_id}"
+            TITLE_DIR = f"./question_{line_id}"
+            CONSTRUCTION_DIR = f"{TITLE_DIR}/construction"
+            LOG_DIR = f"{TITLE_DIR}/log"
+            create_dir(TITLE_DIR)
+            create_dir(CONSTRUCTION_DIR)
+            create_dir(LOG_DIR)
 
-    PAGE_CONTENT_PATH = f"{CONSTRUCTION_DIR}/page.txt"
-    page_content = load_wikipedia_page(TITLE, PAGE_CONTENT_PATH)
+            # logging
+            logging.basicConfig(
+                level=logging.INFO,
+                datefmt="%Y-%m-%d %H:%M:%S",
+                format="%(asctime)s - %(levelname)s - %(message)s",
+                handlers=[
+                    logging.FileHandler(
+                        f"{LOG_DIR}/construction.log",
+                        mode="w",
+                    ),
+                    logging.StreamHandler(),
+                ],
+                force=True,
+            )
 
-    CHUNKS_PATH = f"{CONSTRUCTION_DIR}/chunks.txt"
-    chunks = chunk_page_content(page_content, CHUNKS_PATH)
-    logging.info(f"# of chunks: {len(chunks)}")
+            for idx, page_name_content in enumerate(page_contents):
+                page_name = page_name_content["page_name"]
+                page_content = page_name_content["page_content"]
 
-    ENTITY_LIST_PATH = f"{CONSTRUCTION_DIR}/entities.txt"
-    CHUNKS_ENTITIES_PATH = f"{CONSTRUCTION_DIR}/chunks_entities.txt"
-    entity_list, chunks_entities = extract_entities(
-        chunks, LABELS, ENTITY_LIST_PATH, CHUNKS_ENTITIES_PATH
-    )
-    logging.info(f"# of entities: {len(entity_list)}")
+                # construction
+                chunks_triples_part, labels_entities_part = run_construction_once(
+                    page_content, CONSTRUCTION_DIR, LABELS, idx
+                )
+                chunks_triples.extend(chunks_triples_part)
+                for label, entities in labels_entities_part.items():
+                    if label not in labels_entities:
+                        labels_entities[label] = set(entities)
+                    else:
+                        for entity in entities:
+                            labels_entities[label].add(entity)
 
-    labels_entities = classify_entities(entity_list, LABELS)
-    logging.info({label: len(entities) for label, entities in labels_entities.items()})
+            # save graph
+            GRAPH_PATH = f"{CONSTRUCTION_DIR}/graph.html"
+            draw_graph(chunks_triples, labels_entities, GRAPH_PATH)
+    elif args.dataset == "wiki":
+        # paths
+        TITLE = args.wiki_title
+        TITLE_DIR = f"./{''.join(TITLE.split(' '))}"
+        CONSTRUCTION_DIR = f"{TITLE_DIR}/construction"
+        LOG_DIR = f"{TITLE_DIR}/log"
+        create_dir(TITLE_DIR)
+        create_dir(CONSTRUCTION_DIR)
+        create_dir(LOG_DIR)
 
-    TRIPLES_PATH = f"{CONSTRUCTION_DIR}/chunks_triples.txt"
-    ERRORS_PATH = f"{CONSTRUCTION_DIR}/errors.txt"
-    chunks_triples, errors = extract_triples(
-        chunks, chunks_entities, TRIPLES_PATH, ERRORS_PATH
-    )
-    logging.info(f"# of triples: {sum(len(triples) for triples in chunks_triples)}")
+        # logging
+        logging.basicConfig(
+            level=logging.INFO,
+            datefmt="%Y-%m-%d %H:%M:%S",
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            handlers=[
+                logging.FileHandler(
+                    f"{LOG_DIR}/construction.log",
+                    mode="w",
+                ),
+                logging.StreamHandler(),
+            ],
+            force=True,
+        )
 
-    GRAPH_PATH = f"{CONSTRUCTION_DIR}/graph.html"
-    draw_graph(chunks_triples, labels_entities, GRAPH_PATH)
+        # load wikipedia page
+        page_content = load_wikipedia_page(
+            TITLE, f"{CONSTRUCTION_DIR}/page_content.txt"
+        )
+
+        # construction
+        chunks_triples, labels_entities = run_construction_once(
+            page_content, CONSTRUCTION_DIR, LABELS
+        )
+
+        # save graph
+        GRAPH_PATH = f"{CONSTRUCTION_DIR}/graph.html"
+        draw_graph(chunks_triples, labels_entities, GRAPH_PATH)

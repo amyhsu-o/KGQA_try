@@ -328,21 +328,45 @@ if __name__ == "__main__":
     response_without_explored_paths = generate_without_explored_paths(question)
 
     # === Create Graph ===
-    ENTITY_LIST_PATH = f"{CONSTRUCTION_DIR}/entities.txt"
-    CHUNKS_ENTITIES_PATH = f"{CONSTRUCTION_DIR}/chunks_entities.txt"
-    entity_list, chunks_entities = extract_entities(
-        [], [], ENTITY_LIST_PATH, CHUNKS_ENTITIES_PATH
-    )
+    ENTITY_LIST_PATHS = []
+    CHUNKS_ENTITIES_PATHS = []
+    TRIPLES_PATHS = []
+    ERRORS_PATHS = []
+
+    for file in os.listdir(CONSTRUCTION_DIR):
+        if file.startswith("entities"):
+            ENTITY_LIST_PATHS.append(f"{CONSTRUCTION_DIR}/{file}")
+        elif file.startswith("chunks_entities"):
+            CHUNKS_ENTITIES_PATHS.append(f"{CONSTRUCTION_DIR}/{file}")
+        elif file.startswith("chunks_triples"):
+            TRIPLES_PATHS.append(f"{CONSTRUCTION_DIR}/{file}")
+        elif file.startswith("errors"):
+            ERRORS_PATHS.append(f"{CONSTRUCTION_DIR}/{file}")
+
+    # entities
+    entity_list = []
+    chunks_entities = []
+    for entity_list_path, chunks_entities_path in zip(
+        ENTITY_LIST_PATHS, CHUNKS_ENTITIES_PATHS
+    ):
+        entity_list_part, chunks_entities_part = extract_entities(
+            [], [], entity_list_path, chunks_entities_path
+        )
+        entity_list.extend(entity_list_part)
+        chunks_entities.extend(chunks_entities_part)
     logging.info(f"# of entities: {len(entity_list)}")
 
     labels_entities = classify_entities(entity_list, LABELS)
     logging.info({label: len(entities) for label, entities in labels_entities.items()})
 
-    TRIPLES_PATH = f"{CONSTRUCTION_DIR}/chunks_triples.txt"
-    ERRORS_PATH = f"{CONSTRUCTION_DIR}/errors.txt"
-    chunks_triples, errors = extract_triples([], [], TRIPLES_PATH, ERRORS_PATH)
+    # triples
+    chunks_triples = []
+    for triples_path, errors_path in zip(TRIPLES_PATHS, ERRORS_PATHS):
+        chunks_triples_part, _ = extract_triples([], [], triples_path, errors_path)
+        chunks_triples.extend(chunks_triples_part)
     logging.info(f"# of triples: {sum(len(triples) for triples in chunks_triples)}")
 
+    # graph
     GRAPH_PATH = f"{CONSTRUCTION_DIR}/graph.html"
     G = draw_graph(chunks_triples, labels_entities)
 
