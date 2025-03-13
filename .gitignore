@@ -3,5 +3,8 @@ lib
 venv
 __pycache__
 
+data/*.bz2
+data/*.txt
+
 test.ipynb
 test_*
