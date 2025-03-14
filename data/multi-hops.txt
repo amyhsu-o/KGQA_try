@@ -1,0 +1,1858 @@
+[
+    {
+        "line_id": 2,
+        "domain": "finance",
+        "static_or_dynamic": "slow-changing",
+        "query": "where did the ceo of salesforce previously work?",
+        "answer": "marc benioff spent 13 years at oracle, before launching salesforce.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 4,
+        "domain": "finance",
+        "static_or_dynamic": "real-time",
+        "query": "what company in the dow jones is the best performer today?",
+        "answer": "salesforce",
+        "alt_ans": []
+    },
+    {
+        "line_id": 9,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the s&p 500 index has the highest percentage of green energy usage?",
+        "answer": "the company with the highest percentage of renewable energy usage in the s&p 500 index is the estee lauder companies inc., with over 139% of its total power usage coming from green energy.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 30,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "how long is the longest river in alabama?",
+        "answer": "the longest river that flows through alabama, the tennessee river, is 652 miles long.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 54,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "what was mike epps's age at the time of next friday's release?",
+        "answer": "29",
+        "alt_ans": []
+    },
+    {
+        "line_id": 92,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "what was the 76ers' record the year allen iverson won mvp?",
+        "answer": "56-26",
+        "alt_ans": []
+    },
+    {
+        "line_id": 98,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what age did ferdinand magelan discovered the philippines",
+        "answer": "41 years old",
+        "alt_ans": []
+    },
+    {
+        "line_id": 101,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "when did the lead actor of naked gun die?",
+        "answer": "leslie nielsen, the lead actor of naked gun, died in 2010.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 123,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what was the profession of kim kardashian's second spouse?",
+        "answer": "kris humphries, kim kardashian's second spouse, was an nba player.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 144,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the nasdaq 100 index has the highest ratio of green energy usage?",
+        "answer": "the company with the highest percentage of renewable energy usage in the nasdaq 100 index is google (alphabet), with over 106% of its total power usage coming from green energy.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 153,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "where did the lead designer of fortran get his m.s. from?",
+        "answer": "columbia university",
+        "alt_ans": []
+    },
+    {
+        "line_id": 190,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "how long is the longest route in the us?",
+        "answer": "us route 20, the longest route in the us, is about 3,365 miles long.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 208,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "who wrote the theme song for the movie ghostbusters (1984)?",
+        "answer": "ghostbusters was written by ray parker jr., as the theme song to the 1984 film ghostbusters.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 224,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "when forest whitaker won his/her first oscar best actor, which movie won the best picture?",
+        "answer": "the departed",
+        "alt_ans": []
+    },
+    {
+        "line_id": 255,
+        "domain": "music",
+        "static_or_dynamic": "slow-changing",
+        "query": "how much total in sales did bob dylan's best selling album make?",
+        "answer": "bob dylan's greatest hits (1967) made around $6,525,000.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 267,
+        "domain": "open",
+        "static_or_dynamic": "fast-changing",
+        "query": "what is the profession of the owner of x's third most followed account?",
+        "answer": "the owner of x's third most followed account, justin bieber, is a musician.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 272,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "what was taylor swifts age when she released her debut album?",
+        "answer": "16 years old",
+        "alt_ans": []
+    },
+    {
+        "line_id": 290,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "if i were to visit the capital of hawaii, how high up would i be?",
+        "answer": "5 m",
+        "alt_ans": [
+            "0 to 1220 m"
+        ]
+    },
+    {
+        "line_id": 292,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "how big is the biggest state in the us?",
+        "answer": "the biggest state in the us, alaska, is about 665,384 square miles big.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 333,
+        "domain": "music",
+        "static_or_dynamic": "fast-changing",
+        "query": "who is nicki minaj's latest diss track about?",
+        "answer": "nicki minaj's song \"big foot\" is a diss track about megan thee stallion.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 356,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "has emma thomas worked on any of her husband's films?",
+        "answer": "yes, emma thomas has been producer on all of christopher nolan's films since 1997.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 364,
+        "domain": "finance",
+        "static_or_dynamic": "real-time",
+        "query": "which company in the s&p 500 index has the highest price-to-book ratio?",
+        "answer": "the company with the highest price-to-book ratio in the s&p 500 index is clorox, with a price-to-book ratio of 354.48.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 371,
+        "domain": "finance",
+        "static_or_dynamic": "real-time",
+        "query": "what company in the dow jones is the worst performer today?",
+        "answer": "walgreens boots alliance",
+        "alt_ans": []
+    },
+    {
+        "line_id": 373,
+        "domain": "open",
+        "static_or_dynamic": "slow-changing",
+        "query": "can you tell me the ticker symbol of the company that owns usa today?",
+        "answer": "gci",
+        "alt_ans": []
+    },
+    {
+        "line_id": 376,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what is the driving side in mallorca?",
+        "answer": "right",
+        "alt_ans": []
+    },
+    {
+        "line_id": 381,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "what is the name of the show where danny mcbride plays kenny powers?",
+        "answer": "eastbound & down",
+        "alt_ans": []
+    },
+    {
+        "line_id": 389,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "what's the closing price of voyager therapeutics when it closed higher last time?",
+        "answer": "$7.71",
+        "alt_ans": []
+    },
+    {
+        "line_id": 390,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "can you tell me the name of the leading lady who starred in the film that won the best picture award at the 2007 oscars?",
+        "answer": "vera farmiga",
+        "alt_ans": []
+    },
+    {
+        "line_id": 392,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what is the elevation of the capital of nebraska?",
+        "answer": "366 m",
+        "alt_ans": [
+            "1,201 ft"
+        ]
+    },
+    {
+        "line_id": 394,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what age did abraham lincoln begin his presidency?",
+        "answer": "52 years old",
+        "alt_ans": []
+    },
+    {
+        "line_id": 403,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was the coach of the team that won the ncaa men's basketball championship last year?",
+        "answer": "dan hurley, who coaches the uconn huskies, was the coach of the team that won the ncaa men's basketball championship last year.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 407,
+        "domain": "movie",
+        "static_or_dynamic": "slow-changing",
+        "query": "which of patty ross's film has achieved the highest box office success globally?",
+        "answer": "grown ups 2",
+        "alt_ans": []
+    },
+    {
+        "line_id": 430,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what is the driving side in ireland?",
+        "answer": "left",
+        "alt_ans": []
+    },
+    {
+        "line_id": 433,
+        "domain": "sports",
+        "static_or_dynamic": "fast-changing",
+        "query": "how many grand slams has novak djokovic won on clay courts?",
+        "answer": "3",
+        "alt_ans": []
+    },
+    {
+        "line_id": 450,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the s&p 500 index has the highest ratio of insider ownership?",
+        "answer": "the company with the highest ratio of insider ownership in the s&p 500 index is news corp, with an insider ownership rate of 81.7%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 464,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "at what age did usher perform in the half time show of superbowl?",
+        "answer": "45 years old",
+        "alt_ans": []
+    },
+    {
+        "line_id": 473,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "can you tell me the name of the actress who starred in the film that won the best picture oscar in 2018?",
+        "answer": "sally hawkins",
+        "alt_ans": []
+    },
+    {
+        "line_id": 480,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "what is the name of the bad bunny album released before nadie sabe lo que va a pasar ma\u00f1ana?",
+        "answer": "un verano sin ti",
+        "alt_ans": []
+    },
+    {
+        "line_id": 490,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "who was the first actress and what year to play the role of catwoman in a live-action movie?",
+        "answer": "lee meriwether was the first actress to play the role of catwoman in a live-action movie, in the 1966 film batman.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 498,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "when did the current president of the us get married?",
+        "answer": "the current president of the us, joe biden, got married on june 17, 1977.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 529,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what country is the company that developed fuga: melodies of steel 2 based in?",
+        "answer": "japan",
+        "alt_ans": []
+    },
+    {
+        "line_id": 532,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was the top scorer in the women's world cup last year?",
+        "answer": "miyazawa hinata",
+        "alt_ans": []
+    },
+    {
+        "line_id": 535,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what album did billie eilish won a grammy for in 2022?",
+        "answer": "billie eilish won a album of the year grammy for her album happier than ever in 2022.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 547,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "when did the lead actor of die hard get married?",
+        "answer": "the lead actor of die hard, bruce willis, got married in 2009.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 567,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "when was green day's third studio album released?",
+        "answer": "dookie, the third studio album by green day, was released on february 1st, 1994.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 589,
+        "domain": "open",
+        "static_or_dynamic": "slow-changing",
+        "query": "how long has the current president of the us been in power?",
+        "answer": "the current president of the us, joe biden, has been in power since 2020.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 593,
+        "domain": "movie",
+        "static_or_dynamic": "slow-changing",
+        "query": "what was the name of the movie that won the most golden globe awards in a single year, including best motion picture \u2013 drama, best director, and best actor \u2013 motion picture drama?",
+        "answer": "the movie that won the most golden globe awards in a single year, including best motion picture \u2013 drama, best director, and best actor in a motion picture \u2013 drama, was oppenheimer, directed by christopher nolan and starring cillian murphy.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 601,
+        "domain": "movie",
+        "static_or_dynamic": "slow-changing",
+        "query": "what rating did the most popular comedy show of 2023 have on tomatometer?",
+        "answer": "reservation dogs, one of the most popular comedy shows of 2023, has a rating of 99 % on rotten tomatoes and received praise on many other websites as well.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 623,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "who was the first actor to play the role of a comic book hero in a live-action movie?",
+        "answer": "warren hall was the first actor to play the role of a superhero in a live-action movie, in his iconic portrayal of mandrake the magician in 1939, directed by norman deming and sam nelson.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 649,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the s&p 500 index has the highest diversity, equity, and inclusion score?",
+        "answer": "the company with the highest number of diversity and inclusion initiatives in place in the s&p 500 index is progressive, ranked 1st overall by forbes in 2023.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 660,
+        "domain": "open",
+        "static_or_dynamic": "slow-changing",
+        "query": "what is the abbreviation used to represent the company that owns the new york times in stock market listings?",
+        "answer": "nyt",
+        "alt_ans": []
+    },
+    {
+        "line_id": 663,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "who is the american singer-songwriter who has won 13 grammy awards and is known for her unique blend of pop, r&b, and electronic music, as well as her energetic live performances?",
+        "answer": "lady gaga is the american singer-songwriter who has won 13 grammy awards and is known for her unique blend of pop, r&b, and electronic music, as well as her energetic live performances, including her hit songs \"poker face\" and \"bad romance\".",
+        "alt_ans": []
+    },
+    {
+        "line_id": 665,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "at what age was lorne michaels when he produced his first film?",
+        "answer": "he was 35",
+        "alt_ans": []
+    },
+    {
+        "line_id": 681,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what's the name of the female rapper who was a judge on the reality tv show \"american idol\" for one season?",
+        "answer": "the female rapper who was a judge on the reality tv show \"american idol\" for one season is nicki minaj in the season 12.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 696,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the s&p 500 index has the highest earnings per share (eps) growth rate in the past 5 years?",
+        "answer": "the s&p 500 company with the highest eps growth rate in the past 5 years is cisco systems, with an eps growth rate of 173.71%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 717,
+        "domain": "finance",
+        "static_or_dynamic": "real-time",
+        "query": "which company in the s&p 500 index has the second highest dividend yield?",
+        "answer": "the company with the second highest dividend yield in the s&p 500 index is healthpeek properties, with a dividend yield of 7.5%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 718,
+        "domain": "sports",
+        "static_or_dynamic": "fast-changing",
+        "query": "who is the head coach of san jose's nhl team?",
+        "answer": "david quinn is the head coach for the san jose sharks.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 731,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "where did the lead designer of java (programming language) receive his ph.d.?",
+        "answer": "carnegie mellon university",
+        "alt_ans": []
+    },
+    {
+        "line_id": 732,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "can you tell me the name of the actress who starred in the film that won the best picture oscar in 1993?",
+        "answer": "anna thomson",
+        "alt_ans": []
+    },
+    {
+        "line_id": 747,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the s&p 500 index has the highest number of employees?",
+        "answer": "the company with the highest number of employees in the s&p 500 index is walmart, with over 2.1 million employees.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 753,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "where did the lead designer of yorick (programming language) receive his ph.d.?",
+        "answer": "massachusetts institute of technology",
+        "alt_ans": []
+    },
+    {
+        "line_id": 762,
+        "domain": "finance",
+        "static_or_dynamic": "slow-changing",
+        "query": "which advertising company in the s&p 500 index has a separate chair/ceo?",
+        "answer": "the interpublic group of companies has a separate chair/ceo.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 766,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what's the name of the actress who played the role of the girl character in the movie \"the matrix\"?",
+        "answer": "the actress who played the role of the girl character in the movie \"the matrix\" is carrie-anne moss. she portrayed the role of trinity, a skilled computer hacker and a member of the human resistance.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 770,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "can you tell me what other songs the same artist released in the same year as my time?",
+        "answer": "throw it in the bag, \"everything, everyday, every where\"",
+        "alt_ans": []
+    },
+    {
+        "line_id": 784,
+        "domain": "finance",
+        "static_or_dynamic": "real-time",
+        "query": "which company in the dow jones index has the highest dividend yield?",
+        "answer": "the company with the highest dividend yield in the dow jones index is 3m, with a dividend yield of 6.86%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 787,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what's the name of the actor who played the role of a lawyer with no law degree in the tv show \"suits\"?",
+        "answer": "the actor who played the role of a lawyer in the tv show \"suits\" is patrick j. adams. he portrayed the role of mike ross, a college dropout who becomes a legal associate at a prestigious law firm, in the show, which aired from 2011 to 2019. adams's performance earned him a nomination for a screen actors guild award for outstanding performance by a male actor in a drama series.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 823,
+        "domain": "sports",
+        "static_or_dynamic": "slow-changing",
+        "query": "who is the starting quarterback on baltimore's nfl team?",
+        "answer": "lamar jackson is the starting quarterback of the baltimore ravens.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 828,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what's the name of the actress who played the role of katherine goble johnson in the movie \"hidden figures\"?",
+        "answer": "the actress who played the role of katherine goble johnson in the movie \"hidden figures\" is taraji p. henson. she portrayed the role of a mathematician who worked at nasa during the space race, and the movie was released in 2016.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 830,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was the player who won the most matches in professional tennis last year?",
+        "answer": "novak djokovic, who is coached by goran ivanisevic, won the most matches in professional tennis last year.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 838,
+        "domain": "finance",
+        "static_or_dynamic": "slow-changing",
+        "query": "where did the ceo of anthropic previously work?",
+        "answer": "dario amodei, the ceo of anthropic, was the former vice president of research at openai.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 853,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "what was the pricing of the most recent ipo for a major social media company?",
+        "answer": "pinterest raised $1.43 billion in its ipo, after pricing the offering at $19 a share.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 859,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "when tom hanks won their first academy award for best actor, which film was recognized as the best picture?",
+        "answer": "schindler's list",
+        "alt_ans": []
+    },
+    {
+        "line_id": 868,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what's the name of the actor who played the role of harvey specter in the tv show \"suits\"?",
+        "answer": "the actor who played the role of a detective in the tv show \"true detective\" is gabriel macht. as harvey specter, a senior partner at pearson hardman, gabriel macht served as the center of nearly every plotline on suits and was in every single episode of the series.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 870,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "what is the revenue of bodyarmor's parent company?",
+        "answer": "$45.75 billion",
+        "alt_ans": []
+    },
+    {
+        "line_id": 882,
+        "domain": "finance",
+        "static_or_dynamic": "real-time",
+        "query": "what is the current price of the tech stock with highest market cap in us?",
+        "answer": "currently, microsoft has the highest market cap and currently has 405.72 price per share.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 884,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "who was the first actress to play the role of a female assassin in a live-action movie?",
+        "answer": "meiko kaji was the first actress to play the role of a female assassin in a live-action movie, in her portrayal of yuki kashima in the 1973 film lady snowblood.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 894,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the nasdaq 100 index has the highest number of employees?",
+        "answer": "the company with the highest number of employees in the nasdaq 100 index is amazon, with over 1.5 million employees.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 899,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "which year did taylor swift release her first album?",
+        "answer": "taylor swift released her first album, \"taylor swift,\" in 2006",
+        "alt_ans": []
+    },
+    {
+        "line_id": 914,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who finished in second the year max verstappen won his first championship?",
+        "answer": "lewis hamilton",
+        "alt_ans": []
+    },
+    {
+        "line_id": 919,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was the player who won the most mvp awards in professional basketball last year?",
+        "answer": "joel embiid, who plays for the philadelphia 76ers, won the most mvp awards in professional basketball last year.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 925,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was head coach of the lakers in kobe bryant's rookie year?",
+        "answer": "del harris",
+        "alt_ans": []
+    },
+    {
+        "line_id": 930,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the russell 2000 index has the highest earnings per share (eps) growth rate in the past 5 years?",
+        "answer": "the russell 2000 company with the highest eps growth rate in the past 5 years is radnet, with an eps growth rate of 175%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 952,
+        "domain": "finance",
+        "static_or_dynamic": "real-time",
+        "query": "what is the name of the company that has the highest dividend yield in the s&p 500 index?",
+        "answer": "the company with the highest dividend yield in the s&p 500 index is altria group, with a dividend yield of 9.7%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 953,
+        "domain": "finance",
+        "static_or_dynamic": "slow-changing",
+        "query": "what company in the dow jones has the largest market capitalization?",
+        "answer": "microsoft",
+        "alt_ans": []
+    },
+    {
+        "line_id": 959,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "how many feet is the place with the lowest elevation in vermont?",
+        "answer": "the place with the lowest elevation in vermont, lake champlain, is at 95 feet.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 962,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "what is the net worth of tesla's ceo?",
+        "answer": "elon musk has a net worth of $192 billion.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 963,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the s&p 500 index has the highest ratio of institutional ownership?",
+        "answer": "the company with the highest ratio of institutional ownership in the s&p 500 index is catalent, with an institutional ownership rate of 109.02%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 964,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "what was the budget for the second bourne film?",
+        "answer": "the budget for the second bourne film, the bourne supremacy, was $75 million.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 966,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "what team does the player who threw the most interceptions last year play for?",
+        "answer": "the player who threw the most interceptions last year, sam howell, plays for the washington commanders.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 974,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "how old was leonardo dicaprio when he won best actor award?",
+        "answer": "leonardo was 42 years old in 2016 when he won best actor.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 998,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what's the name of the actress who played the role of a queen in the third season of the tv show \"the crown\"?",
+        "answer": "the actress who played the role of a queen in the third season of the tv show \"the crown\" is olivia colman. for her portrayal of queen elizabeth ii, she received a golden globe award and a primetime emmy award.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1007,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "which feid album is the one that has \"normal\" on it?",
+        "answer": "feliz cumpleanos ferxxo te pirateamos el album",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1009,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was the goalkeeper of the team that won the champions league final last year?",
+        "answer": "ederson, who plays for manchester city, was the goalkeeper of the team that won the champions league final last year.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1021,
+        "domain": "finance",
+        "static_or_dynamic": "slow-changing",
+        "query": "what's the average board retainer fee for compaines on the s&p 500 index in communication services?",
+        "answer": "the average board retainer fee for s&p 500 companies in communication services is $120,000.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1038,
+        "domain": "open",
+        "static_or_dynamic": "slow-changing",
+        "query": "how old is the oldest currently working action movie actor?",
+        "answer": "one of the oldest currently working action movie actors, arnold schwarzenegger, is 76 years old.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1059,
+        "domain": "music",
+        "static_or_dynamic": "fast-changing",
+        "query": "how many songs were released by the artist who received best new artist in 57th grammy (2014)?",
+        "answer": "61",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1060,
+        "domain": "movie",
+        "static_or_dynamic": "slow-changing",
+        "query": "who was the director of the movie that won the most academy awards in a single year?",
+        "answer": "it is a three-way tie between ben-hur, lord of the rings: return of the king, and titanic all winning 11 academy awards. ben-hur: william wyler, lord of the rings: peter jackson, and titanic: james cameron.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1073,
+        "domain": "sports",
+        "static_or_dynamic": "slow-changing",
+        "query": "how many epl teams are based in london?",
+        "answer": "7",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1083,
+        "domain": "music",
+        "static_or_dynamic": "slow-changing",
+        "query": "what's the most recent album from the founder of ysl records?",
+        "answer": "business is business",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1099,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "what were the box office numbers for martin scorsese's most recent movie?",
+        "answer": "killers of the flower moon has grossed $67.8 million in the united states and canada, and $89 million in other territories, for a worldwide total of $156.8 million.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1103,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "who is the american singer-songwriter who has won 14 grammy awards and is known for her unique blend of country, pop, and rock music, including her hit songs \"you belong with me\" and \"we are never ever getting back together\"?",
+        "answer": "taylor swift is the american singer-songwriter who has won 14 grammy awards and is known for her unique blend of country, pop, and rock music, including her hit songs \"you belong with me\" and \"we are never ever getting back together\", which have become chart-topping hits and solidified her status as a pop culture icon.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1118,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "what was the volume of trading in cabot corporation's stock on the most recent day that dividends were distributed?",
+        "answer": "$268,500.00",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1132,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the nasdaq 100 index has the highest gross margin?",
+        "answer": "the company with the highest gross margin in the nasdaq 100 index is microsoft, with a gross margin of over 96%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1156,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "how many toys does andy have in the third toy story movie?",
+        "answer": "17-year-old andy has only twelve of his toys.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1171,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was the goalkeeper of the team that won the fifa world cup last year?",
+        "answer": "martinez, who plays for argentina, was the goalkeeper of the team that won the fifa world cup last year.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1179,
+        "domain": "finance",
+        "static_or_dynamic": "static",
+        "query": "how did the nasdaq composite index perform the year of the covid crash?",
+        "answer": "+43.64%",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1180,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what's the name of the actress who played the role of a queen in the second season of the tv show \"the crown\"?",
+        "answer": "the actress who played the role of a queen in the second season of tv show \"the crown\" is claire foy. she portrayed the role of queen elizabeth ii in the show, which premiered in 2016. foy's performance in the show earned her a golden globe award for best actress in a television series - drama.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1184,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was the player who won the most titles in the wta last year?",
+        "answer": "iga swiatek won the most titles in the wta last year.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1189,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "who is the first actor to play superman?",
+        "answer": "kirk alyn in 1948",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1201,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what is the symbol of the constellation that includes altair?",
+        "answer": "the eagle",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1217,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "can you tell me which country the artist who won the best new artist in 54th grammy (2011) was born?",
+        "answer": "us",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1220,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what is the name of the restaurant founded by the star of joe bell",
+        "answer": "wahlburgers",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1269,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the nasdaq 100 index has the second highest return on equity (roe)?",
+        "answer": "the company with the second highest roe in the nasdaq 100 index is marriott international, with an roe of 1,146%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1271,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the s&p 500 index has the highest gross margin?",
+        "answer": "the company with the highest gross margin in the s&p 500 index is vici properties, with a gross margin of 99.13%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1287,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "who is the american rock band that has sold over 150 million records worldwide and is known for their hit songs \"sweet emotion\" and \"walk this way\"?",
+        "answer": "aerosmith is the american rock band that has sold over 150 million records worldwide and is known for their hit songs \"sweet emotion\" and \"walk this way\", which have become classics of the genre.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1299,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was the winner of the wimbledon women's singles tournament this year?",
+        "answer": "marketa vondrousova, who is coached by jiri hrebec and jan hernych, won the wimbledon women's singles tournament this year.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1308,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the russell 2000 index has the highest number of employees?",
+        "answer": "the company with the highest number of employee-led diversity and inclusion councils in the russell 2000 index is barrett business services inc., with over 127,000 employees.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1328,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "what is the top artist in the most popular music genre in 2015?",
+        "answer": "taylor swift was the top artist in pop in 2015.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1362,
+        "domain": "finance",
+        "static_or_dynamic": "real-time",
+        "query": "what is the price of the the stock with the highest asset percentage in spy holdings?",
+        "answer": "microsoft has 7.26% total assets in the the spy holdings and has a current price of 405.72 per share",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1368,
+        "domain": "sports",
+        "static_or_dynamic": "slow-changing",
+        "query": "what school does lebron james's youngest son attend?",
+        "answer": "sierra canyon high school",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1384,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "what weight class is the ufc number one men's pound for pound fighter in?",
+        "answer": "islam makhachev, the number one men's pound for pound fighter in the ufc, fights at lightweight.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1418,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what's the name of the actress who played the lead female character in the tv show \"the big bang theory\"?",
+        "answer": "the actress who played the role of a scientist in the tv show \"the big bang theory\" is kaley cuoco. she portrayed the role of penny hofstadter in the show, which aired from 2007 to 2019. cuoco's performance earned her a nomination for a critics' choice television award for best supporting actress in a comedy series.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1448,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "at the time gary oldman won their first best actor oscar, which movie was honored with the best picture award?",
+        "answer": "the shape of water",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1467,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what is the elevation of the capital of ohio?",
+        "answer": "238 m",
+        "alt_ans": [
+            "781 ft"
+        ]
+    },
+    {
+        "line_id": 1473,
+        "domain": "finance",
+        "static_or_dynamic": "real-time",
+        "query": "which company in the s&p 500 index has the highest price-to-earnings ratio?",
+        "answer": "the company with the highest price-to-earnings ratio in the s&p 500 index is merck & co inc, with a price-to-earnings ratio of over 975.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1488,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the s&p 500 index has the highest operating margin?",
+        "answer": "the company with the highest operating margin in the s&p 500 index is vici properties, with an operating margin of 92.38%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1490,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "what was galmed pharmaceuticals's closing price on the day that saw the most trading activity last week?",
+        "answer": "$0.38",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1495,
+        "domain": "open",
+        "static_or_dynamic": "slow-changing",
+        "query": "how many people live in the smallest city of finland?",
+        "answer": "the smallest city of finland, kaskinen, has a population of about 1,208 people.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1498,
+        "domain": "open",
+        "static_or_dynamic": "slow-changing",
+        "query": "how many people live in the biggest city of russia?",
+        "answer": "the largest city of russia, moscow, has a population of about 13,010,112 people.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1520,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "what sport did the ufc heavyweight champion's brother play?",
+        "answer": "football",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1521,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "how many people watched the last episode of friends?",
+        "answer": "the last episode of the show friends, the last one, was watched by 52.5 million viewers.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1535,
+        "domain": "music",
+        "static_or_dynamic": "fast-changing",
+        "query": "how old is the last super bowl halftime performer?",
+        "answer": "usher is 45 years old.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1574,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "at what age was michelle trachtenberg in her film debut?",
+        "answer": "she was 10 years old, in her film debut in harriet the spy.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1579,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was the coach of the team that won the stanley cup last season?",
+        "answer": "bruce cassidy, who coaches the vegas golden knights, was the coach of the team that won the stanley cup last season.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1624,
+        "domain": "music",
+        "static_or_dynamic": "fast-changing",
+        "query": "how many certified units does beyonc\u00e9's best selling alubm sell?",
+        "answer": "beyonc\u00e9's best selling album dangerously in love has been sold 6 million certified units.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1629,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "what was dana ashbrook's age when he/she made an appearance in the aggression scale?",
+        "answer": "44",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1636,
+        "domain": "finance",
+        "static_or_dynamic": "slow-changing",
+        "query": "what companies that have reached $1 trillion market cap were founded after 2000?",
+        "answer": "meta",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1643,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "when did drake release his first album?",
+        "answer": "drake released his first album \"thank me later\" in 2010.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1644,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what is the shortest highway in the us in feet?",
+        "answer": "the shortest highway in the us, i-878 in new york, is only 3,696 feet long.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1645,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was head coach of the colts in peyton manning's rookie year?",
+        "answer": "jim e. mora",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1650,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what country does the company behind spider-man 2 (2023 video game) call home?",
+        "answer": "usa",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1654,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what's the name of the actor who played the role of the dean in the tv show \"community\"?",
+        "answer": "the actor who played the role of the dean in the tv show \"community\" is jim rash.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1689,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who is the starting small forward for the team that is currently number one in the nba's eastern conference?",
+        "answer": "jayson tatum is the starting small forward for the boston celtics, currently the number one in the nba's eastern conference.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1714,
+        "domain": "sports",
+        "static_or_dynamic": "slow-changing",
+        "query": "where does amen thompson's brother play?",
+        "answer": "detroit pistons",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1718,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "on langeland, what is the side of the road that people drive on?",
+        "answer": "right",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1720,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "in which country is the company that developed robocop: rogue city located?",
+        "answer": "poland",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1722,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "what is the first song on drake's second album?",
+        "answer": "over my dead body is the first song on drake's second album, take care.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1727,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was the player of the year in the premier league last season?",
+        "answer": "erling haaland, who plays for manchester city, was the player of the year in the premier league last season.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1731,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "on what date did infosys limited last closed at a higher price?",
+        "answer": "$20.31",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1739,
+        "domain": "finance",
+        "static_or_dynamic": "real-time",
+        "query": "which company in the s&p 500 index has the lowest debt-to-equity ratio?",
+        "answer": "the company with the lowest debt-to-equity ratio in the s&p 500 index is monolithic power system, with a debt-to-equity ratio of less than 0.01.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1749,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "what school did the 2016 heisman trophy winner play for?",
+        "answer": "the 2016 heisman trophy winner, lamar jackson, played at louisville.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1769,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "how many locations were filmed in the bourne movie released in 2004?",
+        "answer": "the bourne supremacy was shot in 4 locations moscow, russia; berlin, germany; goa, india; and new york city, new york, usa.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1806,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what country is prince harry's wife from?",
+        "answer": "prince harry's wife, meghan markle, is from the united states.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1815,
+        "domain": "open",
+        "static_or_dynamic": "slow-changing",
+        "query": "how old is the current ceo of microsoft?",
+        "answer": "the current ceo of microsoft, sadya nadella, is 57 years old.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1840,
+        "domain": "finance",
+        "static_or_dynamic": "real-time",
+        "query": "what nasdaq 100 company had the biggest percentage change today?",
+        "answer": "mongodb, inc",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1849,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the russell 2000 index has the highest return on equity (roe)?",
+        "answer": "the company with the highest roe in the russell 2000 index is cogent communications holdings, with an roe of 2,267%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1853,
+        "domain": "sports",
+        "static_or_dynamic": "slow-changing",
+        "query": "how much will the starting quarterback of the cowboys earn this year?",
+        "answer": "in 2024, prescott will earn a base salary of $29,000,000 and a roster bonus of $5,000,000.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1855,
+        "domain": "finance",
+        "static_or_dynamic": "slow-changing",
+        "query": "what company in the nasdaq brings in the most revenue?",
+        "answer": "walmart",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1856,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what's the name of the actress who played the role of katniss in the movie \"the hunger games\"?",
+        "answer": "the actress who played the role of katniss in the movie \"the hunger games\" is jennifer lawrence. katniss everdeen was the protagonist of the movie, which was released in  2012. lawrence's performance earned her a nomination for a academy award for best actress.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1858,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "can you tell me the name of the artist who won the award for song of the year in 49th grammy (2006)?",
+        "answer": "dixie chicks",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1859,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "what age did taylor swift release her first album?",
+        "answer": "16 years old",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1875,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "how many spouses did the latest president of the united states have?",
+        "answer": "joe biden, the latest president of the united states, had a total of two spouses.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1877,
+        "domain": "movie",
+        "static_or_dynamic": "slow-changing",
+        "query": "which of benny andersson's film has achieved the highest box office success globally?",
+        "answer": "mamma mia!",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1897,
+        "domain": "finance",
+        "static_or_dynamic": "slow-changing",
+        "query": "when was meta's most recent vr headset released?",
+        "answer": "meta's most recent vr headset, the meta quest 3, was released on october 10, 2023.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1911,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what's the name of the actress who played the role of rachel green's sister in the tv show \"friends\"?",
+        "answer": "the actresses who played the role of rachel green's sisters in the tv show \"friends\" were reese witherspoon and christina applegate.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1931,
+        "domain": "sports",
+        "static_or_dynamic": "fast-changing",
+        "query": "how many grand slams has iga swiatek won on hard courts?",
+        "answer": "2",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1948,
+        "domain": "music",
+        "static_or_dynamic": "slow-changing",
+        "query": "what's the most recent album from the puerto rican artist that's been in wwe?",
+        "answer": "nadie sabe lo que va a pasar ma\u00f1ana",
+        "alt_ans": []
+    },
+    {
+        "line_id": 1974,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "how many months did it take to release the first toy story movie?",
+        "answer": "it took 4 years to make the first toy story film, making it 48 months to release the movie.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2021,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "how old is dave franco's oldest brother?",
+        "answer": "dave franco's oldest brother, james franco, is 45 years old.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2036,
+        "domain": "finance",
+        "static_or_dynamic": "slow-changing",
+        "query": "how much does the largest bank in north america have in assets?",
+        "answer": "jpmorgan chase, the largest bank in north america, has approximately $3.9 trillion in total assets.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2046,
+        "domain": "finance",
+        "static_or_dynamic": "static",
+        "query": "in the fortune 500 which company has the highest market cap in 2010 in the us",
+        "answer": "back in 2010 the company with highest market cap in us is exxon mobil",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2063,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "what is the country of the winner of the 48th grammy award (2005) for best new artist?",
+        "answer": "us",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2097,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "at what age did steven spielberg direct their first movie?",
+        "answer": "at the age of 16, spielberg wrote and directed his first independent film, which was called \u201cfirelight.\u201d",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2112,
+        "domain": "finance",
+        "static_or_dynamic": "real-time",
+        "query": "which company in the s&p 500 index has the highest debt-to-equity ratio?",
+        "answer": "the company with the highest debt-to-equity ratio in the s&p 500 index is iron mountain, with a debt-to-equity ratio of 69.89%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2113,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what is the symbol of the constellation that includes sirius?",
+        "answer": "the greater dog",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2119,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the nasdaq 100 index has the highest return on equity (roe)?",
+        "answer": "the company with the highest roe in the nasdaq 100 index is booking holdings, with an roe of 22,573%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2122,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "who is the american singer-songwriter who has won 11 grammy awards and is known for her unique voice and poignant lyrics, including her hit songs \"both sides now\" and \"big yellow taxi\"?",
+        "answer": "joni mitchell is the american singer-songwriter who has won 11 grammy awards and is known for her unique voice and poignant lyrics, including her hit songs \"both sides now\" and \"big yellow taxi\", which have become iconic in the folk rock genre.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2125,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which bank in the us made the most last year on green debt?",
+        "answer": "the us bank that made the most money underwriting green bonds is wells fargo, with over $107 million in fees from arrangin bonds and loans for the fossil fuel sector.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2128,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "when did robert john \"mutt\" lange's third wife release her album come on over?",
+        "answer": "shania twain released come on over in 1997",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2139,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "what was the album released by the duo that skrillex formed with diplo?",
+        "answer": "skrillex and diplo present jack \u00fc",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2143,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "which city is the most popular tourist attraction of texas located?",
+        "answer": "the most popular and top-rated tourist attraction in texas, the san antonio riverwalk, is located in san antonio.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2145,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "when did the most expensive action movie come out?",
+        "answer": "the most expensive action movie ever produced, star wars: the force awakens, came out in 2015.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2168,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what's the name of the actress who played the role of queen in the fifth and sixth seasons of the show tv show \"the crown\"?",
+        "answer": "the actress who played the role of queen in the fifth and sixth seasons of the show tv show \"the crown\" is imelda staunton.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2208,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "what other songs did the artist release in the same year as save me?",
+        "answer": "2",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2210,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "who is the american singer-songwriter who has won 1 grammy award and is known for her unique blend of folk, rock, and pop music, including her hit songs \"baby one more time\" and \"oops!... i did it again\"?",
+        "answer": "britney spears is the american singer-songwriter who has won 1 grammy award and is known for her unique blend of folk, rock, and pop music, including her hit songs \"baby one more time\" and \"oops!... i did it again\", which have become pop culture phenomena.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2225,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what's the name of the actress who played the role of maleficent's daughter in the movie \"maleficent\"?",
+        "answer": "the actress who played the role of maleficent's daughter in the movie \"maleficent\" is elle fanning. she portrayed the role of aurora, the current ruler of moors.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2237,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what's the symnol of the constellation that contains iota pegasi?",
+        "answer": "the winged horse",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2259,
+        "domain": "finance",
+        "static_or_dynamic": "real-time",
+        "query": "what is the stock price of the company that currently has a higher market cap than apple?",
+        "answer": "microsoft which has the stock price of $405.72 and currently has a higher market cap at $3.014 t compared to apple's $2.829 t",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2261,
+        "domain": "finance",
+        "static_or_dynamic": "slow-changing",
+        "query": "what is the revenue of frito-lay's parent company?",
+        "answer": "$91.47 billion",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2292,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "who was the first actress to play the role of a female action hero in a live-action movie?",
+        "answer": "pam grier was the first actress to play the role of a female action hero in a live-action movie, foxy brown (1974), directed by jack hill.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2320,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what is the abbr of the us state that is least populated?",
+        "answer": "wyoming, wy, is the state with the lowest population in the us.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2346,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "what sport does pau gasol's brother play?",
+        "answer": "basketball",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2349,
+        "domain": "movie",
+        "static_or_dynamic": "slow-changing",
+        "query": "what was the name of the movie that won the most academy awards in a single year, including best picture, best director, and best actor?",
+        "answer": "the movie that won the most academy awards in a single year, including best picture, best director, and best actor, was ben-hur, directed by william wyler and starring charlton heston and won 11 academy awards total.",
+        "alt_ans": [
+            "oppenheimer"
+        ]
+    },
+    {
+        "line_id": 2357,
+        "domain": "sports",
+        "static_or_dynamic": "slow-changing",
+        "query": "how far did last year's west coast conference champion go in the postseason?",
+        "answer": "gonzaga, last year's west coast conference champion, made it to the elite 8 in the ncaa tournament.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2377,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "what was the singer of the song that won song of the year in the 59th grammy (2016)?",
+        "answer": "adele",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2398,
+        "domain": "open",
+        "static_or_dynamic": "slow-changing",
+        "query": "how many people live in the smallest state in the us by area?",
+        "answer": "the smallest state in the us by area, rhode island, has a population of 1,097,379.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2399,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "what was the first studio album from the group that michael jackson was in?",
+        "answer": "diana ross presents the jackson 5",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2401,
+        "domain": "open",
+        "static_or_dynamic": "slow-changing",
+        "query": "how old is the current president of the us?",
+        "answer": "the current president of the us, joe biden, is 81 years old.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2413,
+        "domain": "finance",
+        "static_or_dynamic": "real-time",
+        "query": "which nasdaq stock has been traded the most today?",
+        "answer": "aisp",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2427,
+        "domain": "music",
+        "static_or_dynamic": "slow-changing",
+        "query": "who did rihanna co-headline a tour with?",
+        "answer": "rihanna and eminem co-headlined the monster tour in 2014",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2429,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "what was henry rollins's age when he/she made an appearance in henry rollins: henry rollins goes to london?",
+        "answer": "33",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2441,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "who is the first actress to play the bond girl?",
+        "answer": "vesper lynd in 1953",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2443,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "what company in the dow jones has the highest per-share price?",
+        "answer": "berkshire hathaway",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2446,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was the player who had the most assists in professional football last season?",
+        "answer": "kevin de bruyne who plays for manchester city, had the most assists in professional football last season.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2457,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "when did drake release their most popular album?",
+        "answer": "drake's most popular album, take care, released in 2011.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2460,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "when did will smith's daughter first release music?",
+        "answer": "2010",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2463,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "how deep is the deepest lake of new york?",
+        "answer": "oneida lake, the deepest lake in new york, is 618 ft deep at its deepest point.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2484,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "what was the lakers' record the year kobe bryant won mvp?",
+        "answer": "57-25",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2489,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what movie earned leonardo dicaprio his first academy award?",
+        "answer": "leonardo dicaprio won his first academy award for best actor for his role in \"the revenant\" in 2016",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2517,
+        "domain": "finance",
+        "static_or_dynamic": "static",
+        "query": "which company in the s&p 500 index has more than 20 board of directors meetings per year?",
+        "answer": "warner bros. discovery board of directors has 25 meetings per year.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2519,
+        "domain": "movie",
+        "static_or_dynamic": "slow-changing",
+        "query": "which of nolan greenwald's movies has achieved the highest level of box office success on a global scale?",
+        "answer": "kin",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2542,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "who was the first actress to play the role of wonder woman in a live-action movie?",
+        "answer": "cathy lee crosby was the first actress to play the role of wonder woman in a live-action movie, in the 1974 film wonder woman.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2544,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the djia has the highest return on assets (roa)?",
+        "answer": "the company with the highest roa in the djia is apple, with an roa of 28.8%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2548,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "who is the american singer-songwriter who has won 4 grammy awards and is known for her soulful voice and genre-bending music, which blends elements of r&b, rock, and hip-hop?",
+        "answer": "erykah badu is the american singer-songwriter who has won 4 grammy awards and is known for her soulful voice and genre-bending music, which blends elements of r&b, rock, and hip-hop, and has released several critically acclaimed albums, including her debut album \"baduizm\" which sold over 3 million copies worldwide.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2563,
+        "domain": "movie",
+        "static_or_dynamic": "slow-changing",
+        "query": "who is the main actor for the movie that has won the most bafta awards?",
+        "answer": "butch cassidy and the sundance kid holds the record with 9 bafta awards, starring robert redford.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2579,
+        "domain": "finance",
+        "static_or_dynamic": "real-time",
+        "query": "which company in the russell 2000 index has the highest dividend yield?",
+        "answer": "the company with the highest dividend yield in the russell 2000 index is b. riley financial, with a dividend yield of 23.65%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2582,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was the coach of the team that won the nba championship last season?",
+        "answer": "michael malone, who coaches the denver nuggets, was the coach of the team that won the nba championship last season.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2599,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "how small is the smallest state in the us?",
+        "answer": "the smallest state in the us, rhode island, is about 3,144 square kilometers big.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2617,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "what was the date of the ufc event where sean o'malley beat aljamain sterling last year?",
+        "answer": "sean o'malley beat aljamain sterling last year at ufc 292 on august 19, 2023.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2619,
+        "domain": "finance",
+        "static_or_dynamic": "fast-changing",
+        "query": "which company in the nasdaq 100 index has the highest return on assets (roa)?",
+        "answer": "the company with the highest roa in the nasdaq 100 index is nvidia, with an roa of 55.67%.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2631,
+        "domain": "finance",
+        "static_or_dynamic": "slow-changing",
+        "query": "when was the oldest company in the dow jones added to the index?",
+        "answer": "the oldest company in the dow jones, procter & gamble, was added on may 6, 1932.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2636,
+        "domain": "open",
+        "static_or_dynamic": "slow-changing",
+        "query": "what is the ticker symbol of the company that owns the buffalo news?",
+        "answer": "lee",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2638,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "at what age did miley cyrus come out as gender fluid",
+        "answer": "22 years old",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2645,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "tell me how old was dua lipa when she released her first song.",
+        "answer": "dua lipa was 19",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2646,
+        "domain": "music",
+        "static_or_dynamic": "static",
+        "query": "who is the american singer-songwriter who has won 21 grammy awards and is known for her powerful voice and energetic live performances, including her hit songs \"respect\" and \"chain of fools\"?",
+        "answer": "aretha franklin is the american singer-songwriter who has won 18 grammy awards and is known for her powerful voice and energetic live performances, including her hit songs \"respect\" and \"chain of fools\", which have become iconic in the soul and r&b genres.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2659,
+        "domain": "open",
+        "static_or_dynamic": "static",
+        "query": "what's the name of the actress who played the role of the queen in the first season of \"the crown\"?",
+        "answer": "the actress who played the role of the queen elizabeth ii in the first season of \"the crown\" is claire foy.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2660,
+        "domain": "movie",
+        "static_or_dynamic": "static",
+        "query": "how many months did it take to film the third spiderman movie with tom holland.",
+        "answer": "filming of spiderman: no way home took place between october 2020 to march 2021, making it 5 months to film.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2673,
+        "domain": "music",
+        "static_or_dynamic": "fast-changing",
+        "query": "can you tell me the number of songs released by the artist who won the best new artist in 47th grammy (2004)?",
+        "answer": "66",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2680,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was the mvp of the nba finals last year?",
+        "answer": "nikola jokic, who plays for the denver nuggets, was the mvp of the nba finals last year.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2692,
+        "domain": "finance",
+        "static_or_dynamic": "static",
+        "query": "which company in the s&p 500 index had the highest number of patents related to renewable energy from 2002 to 2022?",
+        "answer": "the company with the highest number of patents related to renewable energy in the s&p 500 index is general electric, with 15,640 patents related to renewable energy technologies.",
+        "alt_ans": []
+    },
+    {
+        "line_id": 2696,
+        "domain": "sports",
+        "static_or_dynamic": "static",
+        "query": "who was the mvp of the mlb world series last year?",
+        "answer": "corey saeger, who plays for the texas rangers, was the mvp of the mlb world series last year.",
+        "alt_ans": []
+    }
+]

@@ -3,8 +3,6 @@ lib
 venv
 __pycache__
 
-data/*.bz2
-data/*.txt
 question_*
 
 test.ipynb
