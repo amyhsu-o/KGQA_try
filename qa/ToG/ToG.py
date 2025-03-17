@@ -1,11 +1,12 @@
 import os
+import json
 import re
 import logging
 import argparse
 from litellm import completion
 import networkx as nx
 from pyvis.network import Network
-from prompt import (
+from qa.ToG.prompt import (
     extract_relation_prompt,
     score_entity_candidates_prompt,
     prompt_evaluate,
@@ -68,6 +69,11 @@ def is_unused_triple(
 def unused_relation_search(
     G: nx.Graph, entity: str, cluster_chain_of_entities: list[list[tuple[any]]]
 ) -> list[dict[str, any]]:
+    """
+    Return format:
+
+    Ex. {'title': 'is a subsidiary of', 'weight': 4, 'head': 'salesforce.com', 'tail': 'salesforce'}
+    """
     used_triples = {}
     for cluster in cluster_chain_of_entities:
         for triple in cluster:
@@ -114,7 +120,12 @@ def relation_prune(
     entity: str,
     total_relations: list[dict[str]],
     question: str,
-):
+) -> list[dict[str, any]]:
+    """
+    Return format:
+
+    Ex. {'entity': 'salesforce', 'relation': 'co-founded', 'score': 0.4}
+    """
     total_relations.sort(key=lambda x: x["title"])
     total_relations = list(set([relation["title"] for relation in total_relations]))
 
@@ -140,6 +151,11 @@ A: """
 
 
 def entity_search(G: nx.Graph, entity: str, relation: str) -> list[str]:
+    """
+    Return format:
+
+    Ex. 'marc benioff': {'title': 'works at', 'weight': 4, 'head': 'marc benioff', 'tail': 'salesforce'}
+    """
     adjacent_edges_with_relation = {}
 
     for _, description in G[entity].items():
@@ -204,7 +220,7 @@ def reasoning(question: str, cluster_chain_of_entities: list[list[tuple[any]]]) 
         ]
     )
     user_prompt = f"""Q: {question}
-Knowledge Triplets: {chain_prompt}
+Knowledge Triplets:\n{chain_prompt}
 A: """
 
     response = run_llm(
@@ -474,5 +490,14 @@ if __name__ == "__main__":
 
     # === Answer ===
     prompt, response = generate_answer(question, cluster_chain_of_entities)
-    logging.info(f"\nprompt:\n{prompt}")
-    logging.info(f"\nresponse:\n{response}")
+    RESULT_PATH = f"{DATA_PATH}/reasoning_path/result.txt"
+    with open(RESULT_PATH, "w") as f:
+        json.dump(
+            {
+                "query": question,
+                "retrieved data": cluster_chain_of_entities,
+                "answer": response,
+            },
+            f,
+            indent=4,
+        )
