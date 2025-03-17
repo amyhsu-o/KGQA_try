@@ -330,7 +330,6 @@ def draw_graph(
                     node1,
                     node2,
                     title=str(item["relationship"]),
-                    weight=4,
                     head=str(node1),
                     tail=str(node2),
                 )

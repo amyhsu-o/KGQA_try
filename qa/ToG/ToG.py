@@ -3,9 +3,14 @@ import json
 import re
 import logging
 import argparse
+import numpy as np
+import pandas as pd
+import pickle
 from litellm import completion
+from ollama import Client
 import networkx as nx
 from pyvis.network import Network
+from sklearn.metrics.pairwise import cosine_similarity
 from qa.ToG.prompt import (
     extract_relation_prompt,
     score_entity_candidates_prompt,
@@ -37,6 +42,48 @@ def run_llm(messages: list[dict[str, str]]) -> str:
     return response
 
 
+def get_text_embeddings(text_list: list[str]) -> list[np.array]:
+    embeddings = (
+        Client(host="http://localhost:11435")
+        .embed(model="nomic-embed-text:latest", input=text_list)
+        .embeddings
+    )
+    embeddings = [np.array(embedding) for embedding in embeddings]
+    return embeddings
+
+
+def get_all_entity_embeddings(G: nx.Graph, path: str) -> dict[str, np.array]:
+    if os.path.exists(path):
+        logging.info("load entity embeddings from file")
+        with open(path, "rb") as f:
+            entity_embeddings = pickle.load(f)
+    else:
+        logging.info("embed entities")
+        entity_embeddings = {
+            entity: embedding
+            for entity, embedding in zip(
+                list(G.nodes), get_text_embeddings(list(G.nodes))
+            )
+        }
+        with open(path, "wb") as f:
+            pickle.dump(entity_embeddings, f)
+    return entity_embeddings
+
+
+def retrieve_top_k_similarity(
+    source_embeddings_df: pd.DataFrame, target_embedding: np.array, top_k: int
+) -> list[str]:
+    temp_score_df = pd.DataFrame(
+        data=cosine_similarity(source_embeddings_df, target_embedding.reshape(1, -1)),
+        columns=["cosine_similarity"],
+        index=source_embeddings_df.index,
+    )
+    temp_score_df = temp_score_df.sort_values(
+        by="cosine_similarity", ascending=False
+    ).head(top_k)
+    return list(temp_score_df.index)
+
+
 def generate_without_explored_paths(question):
     user_prompt = f"""Q: {question}\nA:"""
     response = run_llm(
@@ -60,7 +107,10 @@ def is_unused_triple(
         return True
 
     for triple in used_triples[description["head"]]:
-        if triple[1] == description["title"] and triple[2] == description["tail"]:
+        if (
+            triple["title"] == description["title"]
+            and triple["tail"] == description["tail"]
+        ):
             return False
 
     return True
@@ -77,7 +127,7 @@ def unused_relation_search(
     used_triples = {}
     for cluster in cluster_chain_of_entities:
         for triple in cluster:
-            head = triple[0]
+            head = triple["head"]
             used_triples[head] = used_triples.get(head, [])
             used_triples[head].append(triple)
 
@@ -89,7 +139,7 @@ def unused_relation_search(
     return unused_relations
 
 
-def clean_relations(response: str, entity: str) -> tuple[bool, list[str]]:
+def clean_relations(response: str, entity: str) -> list[dict[str, any]]:
     patterns = [
         r"{\s*(?P<relation>[^()]+)\s+\(Score:\s+(?P<score>[0-9.]+)\)}",
         r"\*\*\s*(?P<relation>[^()]+)\s+\(Score:\s+(?P<score>[0-9.]+)\)\*\*",
@@ -118,39 +168,109 @@ def clean_relations(response: str, entity: str) -> tuple[bool, list[str]]:
 
 def relation_prune(
     entity: str,
-    total_relations: list[dict[str]],
+    all_relations: list[dict[str]],
     question: str,
+    method_to_score: str,
 ) -> list[dict[str, any]]:
     """
     Return format:
 
     Ex. {'entity': 'salesforce', 'relation': 'co-founded', 'score': 0.4}
     """
-    total_relations.sort(key=lambda x: x["title"])
-    total_relations = list(set([relation["title"] for relation in total_relations]))
+    all_relations.sort(key=lambda x: x["title"])
+    all_relations = list(set([relation["title"] for relation in all_relations]))
 
-    # ask LLM to choose top k relations
-    system_prompt = extract_relation_prompt.format(top_k=TOP_K)
-    user_prompt = f"""Q: {question}
+    if method_to_score in ["llm", "llm_embedding"]:
+        if len(all_relations) == 1:
+            retrieve_relations_with_scores = [
+                {
+                    "entity": entity,
+                    "relation": all_relations[0].lower(),
+                    "score": 1,
+                }
+            ]
+        else:
+            # ask LLM to choose top k relations
+            system_prompt = extract_relation_prompt.format(top_k=TOP_K)
+            user_prompt = f"""Q: {question}
 Topic Entity: {entity}
-Relations: {"; ".join(total_relations)}
+Relations: {"; ".join(all_relations)}
 A: """
-    response = run_llm(
-        [
-            {"content": system_prompt, "role": "system"},
-            {"content": user_prompt, "role": "user"},
-        ]
-    )
+            response = run_llm(
+                [
+                    {"content": system_prompt, "role": "system"},
+                    {"content": user_prompt, "role": "user"},
+                ]
+            )
 
-    # clean the response
-    retrieve_relations_with_scores = clean_relations(response, entity)
+            # clean the response
+            retrieve_relations_with_scores = clean_relations(response, entity)
+            logging.info(
+                f"relations retrieved by LLM: {[relation['relation'] for relation in retrieve_relations_with_scores]}"
+            )
+
+        # check relations retrieved by LLM are in graph
+        if method_to_score == "llm":
+            for relation in retrieve_relations_with_scores:
+                logging.error(f"Relation '{relation['relation']}' not found")
+                retrieve_relations_with_scores.remove(relation)
+        elif method_to_score == "llm_embedding":
+            # relation embedding
+            relation_embeddings = {
+                relation: embedding
+                for relation, embedding in zip(
+                    all_relations, get_text_embeddings(all_relations)
+                )
+            }
+            relation_embeddings_df = pd.DataFrame(relation_embeddings).T
+
+            substitute_relations_with_scores = {}
+            for relation in retrieve_relations_with_scores:
+                # if relation not found, substitute with similar relation
+                if relation["relation"] not in all_relations:
+                    substitute_relation = retrieve_top_k_similarity(
+                        relation_embeddings_df,
+                        get_text_embeddings([relation["relation"]])[0],
+                        1,
+                    )[0]
+                    logging.info(
+                        f"Relation '{relation['relation']}' not found -> change to '{substitute_relation}'"
+                    )
+                else:
+                    substitute_relation = relation["relation"]
+
+                # add up the score for the same relation
+                if substitute_relations_with_scores.get(substitute_relation) is None:
+                    substitute_relations_with_scores[substitute_relation] = relation
+                    substitute_relations_with_scores[substitute_relation][
+                        "relation"
+                    ] = substitute_relation
+                else:
+                    substitute_relations_with_scores[substitute_relation]["score"] += (
+                        relation["score"]
+                    )
+
+            retrieve_relations_with_scores = list(
+                substitute_relations_with_scores.values()
+            )
+
+    elif method_to_score == "embedding":
+        entity_relation_embeddings = get_text_embeddings(
+            [f"{entity} | {relation}" for relation in all_relations]
+        )
+        query_embedding = get_text_embeddings(question)[0].reshape(1, -1)
+        scores = cosine_similarity(entity_relation_embeddings, query_embedding)
+        retrieve_relations_with_scores = [
+            {"entity": entity, "relation": relation, "score": score[0]}
+            for relation, score in zip(all_relations, scores)
+        ]
 
     if len(retrieve_relations_with_scores) == 0:
         return []
     return retrieve_relations_with_scores
 
 
-def entity_search(G: nx.Graph, entity: str, relation: str) -> list[str]:
+def entity_search(G: nx.Graph, entity: str, relation: str) -> dict[str, dict[str, any]]:
     """
     Return format:
 
@@ -174,29 +294,54 @@ def clean_scores(response: str, entity_candidates: list[str]) -> list[float]:
     scores = [float(score) for score in scores]
     if len(scores) == len(entity_candidates):
         return scores
+    elif len(scores) == len(entity_candidates) * 2:
+        return scores[: len(entity_candidates)]
     else:
+        logging.error(f"Error in scores: {entity_candidates} {scores} ")
         return [1 / len(entity_candidates)] * len(entity_candidates)
 
 
 def entity_score(
-    question: str, relation: str, entity_candidates: list[str], score: float
-):
-    user_prompt = f"""Q: {question}
+    question: str,
+    relation: str,
+    entity_candidates: list[str],
+    relation_score: float,
+    method_to_score: str,
+) -> list[float]:
+    if method_to_score in ["llm", "llm_embedding"]:
+        if len(entity_candidates) == 1:
+            scores = [relation_score]
+        else:
+            user_prompt = f"""Q: {question}
 Relation: {relation}
 Entities: {entity_candidates}"""
-    response = run_llm(
-        [
-            {"content": score_entity_candidates_prompt, "role": "system"},
-            {"content": user_prompt, "role": "user"},
-        ]
-    )
-    scores = [float(x) * score for x in clean_scores(response, entity_candidates)]
+            response = run_llm(
+                [
+                    {"content": score_entity_candidates_prompt, "role": "system"},
+                    {"content": user_prompt, "role": "user"},
+                ]
+            )
+            scores = [
+                float(x) * relation_score
+                for x in clean_scores(response, entity_candidates)
+            ]
+    elif method_to_score == "embedding":
+        relation_entity_embeddings = get_text_embeddings(
+            [f"{relation} {entity}" for entity in entity_candidates]
+        )
+        query_embedding = get_text_embeddings(question)[0].reshape(1, -1)
+        scores = (
+            cosine_similarity(relation_entity_embeddings, query_embedding)
+            * relation_score
+        )
+        scores = [score[0] for score in scores]
+
     return scores
 
 
-def entity_prune(total_selected_edges: list[dict[str, any]]) -> list[dict[str, any]]:
-    total_selected_edges.sort(key=lambda x: x["score"], reverse=True)
-    return total_selected_edges[:TOP_K]
+def entity_prune(all_selected_edges: list[dict[str, any]]) -> list[dict[str, any]]:
+    all_selected_edges.sort(key=lambda x: x["score"], reverse=True)
+    return all_selected_edges[:TOP_K]
 
 
 def get_new_topic_entities(
@@ -208,15 +353,15 @@ def get_new_topic_entities(
             new_topic_entities.add(edge["head"])
         if edge["tail"] not in topic_entities:
             new_topic_entities.add(edge["tail"])
-    return new_topic_entities
+    return list(new_topic_entities)
 
 
 def reasoning(question: str, cluster_chain_of_entities: list[list[tuple[any]]]) -> str:
     chain_prompt = "\n".join(
         [
-            ", ".join(str(x) for x in chain)
+            f"{triple['head']}, {triple['title']}, {triple['tail']}"
             for sublist in cluster_chain_of_entities
-            for chain in sublist
+            for triple in sublist
         ]
     )
     user_prompt = f"""Q: {question}
@@ -249,14 +394,18 @@ def save_current_cluster_chain(
     for cluster in cluster_chain_of_entities:
         for triple in cluster:
             all_triples[0].append(
-                {"subject": triple[0], "relationship": triple[1], "object": triple[2]}
+                {
+                    "subject": triple["head"],
+                    "relationship": triple["title"],
+                    "object": triple["tail"],
+                }
             )
 
     tempG = draw_graph(all_triples, labels_entities)
     nt = Network(height="750px", width="100%")
     nt.from_nx(tempG)
     nt.force_atlas_2based(central_gravity=0.015, gravity=-31)
-    nt.save_graph(f"{path}/reasoning_path/graph{round_count}.html")
+    nt.save_graph(f"{path}/{REASONING_DIR_NAME}/graph{round_count}.html")
 
 
 def generate_answer(
@@ -264,13 +413,13 @@ def generate_answer(
 ) -> tuple[str, str]:
     chain_prompt = "\n".join(
         [
-            ", ".join(str(x) for x in chain)
+            f"{triple['head']}, {triple['title']}, {triple['tail']}"
             for sublist in cluster_chain_of_entities
-            for chain in sublist
+            for triple in sublist
         ]
     )
     user_prompt = f"""Q: {question}
-Knowledge Triplets: {chain_prompt}
+Knowledge Triplets:\n{chain_prompt}
 A: """
     response = run_llm(
         [
@@ -310,14 +459,36 @@ if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("--path", type=str, required=True)
     arg_parser.add_argument("--query", type=str, required=True)
+    arg_parser.add_argument(
+        "--method_for_query_entity",
+        type=str,
+        choices=["ner", "ner_embedding", "embedding"],
+        default="ner",
+    )
+    arg_parser.add_argument(
+        "--method_to_score",
+        type=str,
+        choices=["llm", "llm_embedding", "embedding"],
+        default="llm",
+    )
+    # arg_parser.add_argument(
+    #     "--traverse_step",
+    #     type=str,
+    #     choices=["entity_relation", "triple"],
+    #     default="entity_relation",
+    # )
     args = arg_parser.parse_args()
 
     # path
     DATA_PATH = args.path
+    ARG_ID = f"{args.method_for_query_entity}__{args.method_to_score}"
+    REASONING_DIR_NAME = f"reasoning_path__{ARG_ID}"
     if not os.path.exists(f"{DATA_PATH}/construction"):
         exit()
-    if not os.path.exists(f"{DATA_PATH}/reasoning_path"):
-        os.makedirs(f"{DATA_PATH}/reasoning_path")
+    if not os.path.exists(f"{DATA_PATH}/additional"):
+        os.makedirs(f"{DATA_PATH}/additional")
+    if not os.path.exists(f"{DATA_PATH}/{REASONING_DIR_NAME}"):
+        os.makedirs(f"{DATA_PATH}/{REASONING_DIR_NAME}")
 
     # logging
     logging.basicConfig(
@@ -326,7 +497,7 @@ if __name__ == "__main__":
         format="%(asctime)s - %(levelname)s - %(message)s",
         handlers=[
             logging.FileHandler(
-                f"{DATA_PATH}/log/reasoning_path.log",
+                f"{DATA_PATH}/log/{REASONING_DIR_NAME}.log",
                 mode="w",
             ),
             logging.StreamHandler(),
@@ -337,11 +508,9 @@ if __name__ == "__main__":
 
     # === Query ===
     question = args.query
-    _, chunks_entities = extract_entities([question], LABELS)
-    topic_entities = [entity.lower() for entity in chunks_entities[0]]
 
     # === LLM only ===
-    response_without_explored_paths = generate_without_explored_paths(question)
+    # response_without_explored_paths = generate_without_explored_paths(question)
 
     # === Create Graph ===
     ENTITY_LIST_PATHS = []
@@ -386,35 +555,75 @@ if __name__ == "__main__":
     GRAPH_PATH = f"{CONSTRUCTION_DIR}/graph.html"
     G = draw_graph(chunks_triples, labels_entities)
 
+    # entity embeddings
+    ENTITY_EMBEDDINGS_PATH = f"{DATA_PATH}/additional/entity_embeddings.pkl"
+    entity_embeddings = get_all_entity_embeddings(G, ENTITY_EMBEDDINGS_PATH)
+    entity_embeddings_df = pd.DataFrame(entity_embeddings).T
+
     # === ToG ===
+    # query topic entities
+    topic_entities = []
+    if args.method_for_query_entity == "ner":
+        _, chunks_entities = extract_entities([question], LABELS)
+        ner_entities = chunks_entities[0]
+        logging.info(f"query entities extracted from NER: {ner_entities}")
+        topic_entities = [
+            ner_entity.lower() for ner_entity in ner_entities if ner_entity in G.nodes
+        ]
+    elif args.method_for_query_entity == "ner_embedding":
+        # ner
+        _, chunks_entities = extract_entities([question], LABELS)
+        ner_entities = chunks_entities[0]
+        logging.info(f"query entities extracted from NER: {ner_entities}")
+
+        # embedding
+        topic_entities = []
+        ner_entity_embeddings = get_text_embeddings(ner_entities)
+        for idx, ner_entity_embedding in enumerate(ner_entity_embeddings):
+            topic_entities.append(
+                retrieve_top_k_similarity(
+                    entity_embeddings_df, ner_entity_embedding, 1
+                )[0]
+            )
+    elif args.method_for_query_entity == "embedding":
+        query_embedding = get_text_embeddings([question])[0]
+        topic_entities.extend(
+            retrieve_top_k_similarity(entity_embeddings_df, query_embedding, TOP_K)
+        )
+    logging.info(f"Topic entities: {topic_entities}")
+
+    # traversal on graph
     done = False
     round_count = 1
     cluster_chain_of_entities = []
 
     while not done:
-        logging.info(f"\n===== Round {round_count} =====")
+        logging.info(f"\n===== Round {round_count}: start from {topic_entities} =====")
 
         # === relation ===
         current_entity_relations_list = []
 
         for idx, entity in enumerate(topic_entities):
             try:
-                all_relations = unused_relation_search(
+                # find all adjacent relations not retrieved yet
+                all_unused_relations = unused_relation_search(
                     G, entity, cluster_chain_of_entities
                 )
-                if len(all_relations) == 0:
+                if len(all_unused_relations) == 0:
                     logging.info(f"{entity}: 0 relation selected")
                     continue
 
+                # score the relations
                 retrieve_relations_with_scores = relation_prune(
                     entity,
-                    all_relations,
+                    all_unused_relations,
                     question,
+                    args.method_to_score,
                 )
                 current_entity_relations_list.extend(retrieve_relations_with_scores)
 
                 logging.info(
-                    f"{entity}: {len(retrieve_relations_with_scores)} relations selected"
+                    f"{entity}: {len(retrieve_relations_with_scores)} relation selected\n{retrieve_relations_with_scores}"
                 )
             except KeyError:
                 logging.error(f"{entity}: not found")
@@ -427,7 +636,7 @@ if __name__ == "__main__":
             break
 
         # === entity ===
-        total_selected_edges = []
+        all_selected_edges = []
 
         for entity_relation in current_entity_relations_list:
             entity = entity_relation["entity"]
@@ -441,23 +650,24 @@ if __name__ == "__main__":
             if len(entity_candidates) == 0:
                 continue
 
-            # ask LLM to score the entities
+            # score the entities
             scores = entity_score(
                 question,
                 entity_relation["relation"],
                 entity_candidates,
                 entity_relation["score"],
+                args.method_to_score,
             )
 
             # add score to edges
             for idx, entity in enumerate(entity_candidates):
                 adjacent_edges_with_relation[entity]["score"] = scores[idx]
 
-            total_selected_edges.extend(list(adjacent_edges_with_relation.values()))
+            all_selected_edges.extend(list(adjacent_edges_with_relation.values()))
 
-        logging.info(f"\ntotal_selected_edges:\n{total_selected_edges}")
+        logging.info(f"\nall_selected_edges:\n{all_selected_edges}")
 
-        important_edges = entity_prune(total_selected_edges)
+        important_edges = entity_prune(all_selected_edges)
         logging.info(f"\nimportant_edges:\n{important_edges}")
 
         # update
@@ -467,9 +677,8 @@ if __name__ == "__main__":
             logging.info("\nSelected edges:")
             show_adjacent_relations(important_edges)
 
-            important_edges = [
-                (edge["head"], edge["title"], edge["tail"]) for edge in important_edges
-            ]
+            for idx in range(len(important_edges)):
+                del important_edges[idx]["score"]
             cluster_chain_of_entities.append(important_edges)
 
             save_current_cluster_chain(
@@ -490,7 +699,7 @@ if __name__ == "__main__":
 
     # === Answer ===
     prompt, response = generate_answer(question, cluster_chain_of_entities)
-    RESULT_PATH = f"{DATA_PATH}/reasoning_path/result.txt"
+    RESULT_PATH = f"{DATA_PATH}/log/result__{ARG_ID}.txt"
     with open(RESULT_PATH, "w") as f:
         json.dump(
             {
