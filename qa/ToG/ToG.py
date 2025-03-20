@@ -14,6 +14,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from qa.ToG.prompt import (
     extract_relation_prompt,
     score_entity_candidates_prompt,
+    extract_triple_prompt,
     prompt_evaluate,
     answer_prompt,
     cot_prompt,
@@ -42,7 +43,7 @@ def run_llm(messages: list[dict[str, str]]) -> str:
     return response
 
 
-def get_text_embeddings(text_list: list[str]) -> list[np.array]:
+def get_text_embeddings(text_list: list[str]) -> list[np.ndarray]:
     embeddings = (
         Client(host="http://localhost:11435")
         .embed(model="nomic-embed-text:latest", input=text_list)
@@ -52,7 +53,7 @@ def get_text_embeddings(text_list: list[str]) -> list[np.array]:
     return embeddings
 
 
-def get_all_entity_embeddings(G: nx.Graph, path: str) -> dict[str, np.array]:
+def get_all_entity_embeddings(G: nx.Graph, path: str) -> dict[str, np.ndarray]:
     if os.path.exists(path):
         logging.info("load entity embeddings from file")
         with open(path, "rb") as f:
@@ -71,7 +72,7 @@ def get_all_entity_embeddings(G: nx.Graph, path: str) -> dict[str, np.array]:
 
 
 def retrieve_top_k_similarity(
-    source_embeddings_df: pd.DataFrame, target_embedding: np.array, top_k: int
+    source_embeddings_df: pd.DataFrame, target_embedding: np.ndarray, top_k: int
 ) -> list[str]:
     temp_score_df = pd.DataFrame(
         data=cosine_similarity(source_embeddings_df, target_embedding.reshape(1, -1)),
@@ -116,8 +117,8 @@ def is_unused_triple(
     return True
 
 
-def unused_relation_search(
-    G: nx.Graph, entity: str, cluster_chain_of_entities: list[list[tuple[any]]]
+def unused_adjacent_triple_search(
+    G: nx.Graph, entity: str, cluster_chain_of_entities: list[list[dict[str, any]]]
 ) -> list[dict[str, any]]:
     """
     Return format:
@@ -142,7 +143,7 @@ def unused_relation_search(
 def clean_relations(response: str, entity: str) -> list[dict[str, any]]:
     patterns = [
         r"{\s*(?P<relation>[^()]+)\s+\(Score:\s+(?P<score>[0-9.]+)\)}",
-        r"\*\*\s*(?P<relation>[^()]+)\s+\(Score:\s+(?P<score>[0-9.]+)\)\*\*",
+        r"\*\*\s*(?P<relation>[^()]+)\s+\(Score:\s+(?P<score>[0-9.]+)\):?\*\*",
     ]
     relations = []
     for pattern in patterns:
@@ -168,7 +169,7 @@ def clean_relations(response: str, entity: str) -> list[dict[str, any]]:
 
 def relation_prune(
     entity: str,
-    all_relations: list[dict[str]],
+    all_relations: list[dict[str, any]],
     question: str,
     method_to_score: str,
 ) -> list[dict[str, any]]:
@@ -211,9 +212,14 @@ A: """
 
         # check relations retrieved by LLM are in graph
         if method_to_score == "llm":
+            substitute_relations_with_scores = []
             for relation in retrieve_relations_with_scores:
-                logging.error(f"Relation '{relation['relation']}' not found")
-                retrieve_relations_with_scores.remove(relation)
+                if relation["relation"] in all_relations:
+                    logging.info(f"Relation '{relation['relation']}' found")
+                    substitute_relations_with_scores.append(relation)
+                else:
+                    logging.error(f"Relation '{relation['relation']}' not found")
+            retrieve_relations_with_scores = substitute_relations_with_scores
         elif method_to_score == "llm_embedding":
             # relation embedding
             relation_embeddings = {
@@ -258,7 +264,7 @@ A: """
         entity_relation_embeddings = get_text_embeddings(
             [f"{entity} | {relation}" for relation in all_relations]
         )
-        query_embedding = get_text_embeddings(question)[0].reshape(1, -1)
+        query_embedding = get_text_embeddings([question])[0].reshape(1, -1)
         scores = cosine_similarity(entity_relation_embeddings, query_embedding)
         retrieve_relations_with_scores = [
             {"entity": entity, "relation": relation, "score": score[0]}
@@ -294,7 +300,10 @@ def clean_scores(response: str, entity_candidates: list[str]) -> list[float]:
     scores = [float(score) for score in scores]
     if len(scores) == len(entity_candidates):
         return scores
-    elif len(scores) == len(entity_candidates) * 2:
+    elif (
+        len(scores) == len(entity_candidates) * 2
+        or len(scores) == len(entity_candidates) + 1
+    ):
         return scores[: len(entity_candidates)]
     else:
         logging.error(f"Error in scores: {entity_candidates} {scores} ")
@@ -339,9 +348,160 @@ Entities: {entity_candidates}"""
     return scores
 
 
-def entity_prune(all_selected_edges: list[dict[str, any]]) -> list[dict[str, any]]:
-    all_selected_edges.sort(key=lambda x: x["score"], reverse=True)
-    return all_selected_edges[:TOP_K]
+def prune_by_score(all_selected_items: list[dict[str, any]]) -> list[dict[str, any]]:
+    all_selected_items.sort(key=lambda x: x["score"], reverse=True)
+    return all_selected_items[:TOP_K]
+
+
+def clean_triples(response: str) -> list[dict[str, any]]:
+    patterns = [
+        r"{\s*\((?P<triple>[^()]+)\)\s+\(Score:\s+(?P<score>[0-9.]+)\)}",
+        r"\*\*\s*\((?P<triple>[^()]+)\)\s+\(Score:\s+(?P<score>[0-9.]+)\):?\*\*",
+    ]
+    triples = []
+    for pattern in patterns:
+        for match in re.finditer(pattern, response):
+            try:
+                triple = match.group("triple").strip()
+                score = float(match.group("score"))
+                head, relation, tail = triple.split(" | ")
+                triples.append(
+                    {
+                        "head": head.lower(),
+                        "title": relation.lower(),
+                        "tail": tail.lower(),
+                        "score": score,
+                    }
+                )
+            except ValueError:
+                logging.error(f"Error in item: {match}")
+
+        if len(triples) > 0:
+            break
+
+    return triples
+
+
+def triple_prune(
+    entity: str,
+    all_triples: list[dict[str, any]],
+    question: str,
+    method_to_score: str,
+) -> list[dict[str, any]]:
+    """
+    Return format:
+
+    Ex. {'head': 'salesforce', 'title': 'is described in', 'tail': 'wikipedia', 'score': 0.4}
+    """
+
+    if len(all_triples) == 1:
+        retrieve_triples_with_scores = all_triples
+        retrieve_triples_with_scores[0]["score"] = 1
+    else:
+        # get triples embeddings
+        all_triples_df = pd.DataFrame(all_triples)
+        all_triples_df["triple_name"] = (
+            all_triples_df["head"]
+            + " | "
+            + all_triples_df["title"]
+            + " | "
+            + all_triples_df["tail"]
+        )
+        all_triples_df.set_index("triple_name", inplace=True)
+        all_triples_df["embedding"] = get_text_embeddings(list(all_triples_df.index))
+
+        triple_embeddings = {
+            index: embedding
+            for index, embedding in zip(
+                all_triples_df.index,
+                all_triples_df["embedding"],
+            )
+        }
+        triple_embeddings_df = pd.DataFrame(triple_embeddings).T
+
+        if method_to_score in ["llm", "llm_embedding"]:
+            batch_size = 50
+            substitute_triples_with_scores = []
+            for i in range(len(all_triples) // batch_size + 1):
+                # ask LLM to choose top k triples
+                system_prompt = extract_triple_prompt.format(top_k=TOP_K)
+
+                user_prompt = f"""Q: {question}
+Topic Entity: {entity}
+Triples: {"; ".join([f"({triple['head']} | {triple['title']} | {triple['tail']})" for triple in all_triples[i * batch_size : (i + 1) * batch_size]])}
+A: """
+                response = run_llm(
+                    [
+                        {"content": system_prompt, "role": "system"},
+                        {"content": user_prompt, "role": "user"},
+                    ]
+                )
+
+                # clean the response
+                retrieve_triples_with_scores = clean_triples(response)
+                logging.info(
+                    f"triples retrieved by LLM: {retrieve_triples_with_scores}"
+                )
+
+                # check relations retrieved by LLM are in graph
+                for triple in retrieve_triples_with_scores:
+                    selected_triple = all_triples_df[
+                        (all_triples_df["head"] == triple["head"])
+                        & (all_triples_df["title"] == triple["title"])
+                        & (all_triples_df["tail"] == triple["tail"])
+                    ]
+
+                    if selected_triple.shape[0] > 0:
+                        logging.info(f"Triple '{triple}' found")
+                        substitute_triples_with_scores.append(triple)
+                    else:
+                        if method_to_score == "llm":
+                            logging.error(f"Triple '{triple}' not found")
+                        elif method_to_score == "llm_embedding":
+                            substitute_triple = retrieve_top_k_similarity(
+                                triple_embeddings_df,
+                                get_text_embeddings(
+                                    [
+                                        f"{triple['head']} | {triple['title']} | {triple['tail']}"
+                                    ]
+                                )[0],
+                                1,
+                            )[0]
+                            substitute_triples_with_scores.append(
+                                {
+                                    "head": substitute_triple.split(" | ")[0],
+                                    "title": substitute_triple.split(" | ")[1],
+                                    "tail": substitute_triple.split(" | ")[2],
+                                    "score": triple["score"],
+                                }
+                            )
+                            logging.info(
+                                f"Triple '{triple}' not found -> change to {substitute_triple}"
+                            )
+            retrieve_triples_with_scores = substitute_triples_with_scores
+            if len(retrieve_triples_with_scores) > TOP_K:
+                retrieve_triples_with_scores = triple_prune(
+                    entity,
+                    retrieve_triples_with_scores,
+                    question,
+                    method_to_score,
+                )
+        elif method_to_score == "embedding":
+            query_embedding = get_text_embeddings([question])[0].reshape(1, -1)
+            scores = cosine_similarity(triple_embeddings_df, query_embedding)
+            retrieve_triples_with_scores = [
+                {
+                    "head": index.split(" | ")[0],
+                    "title": index.split(" | ")[1],
+                    "tail": index.split(" | ")[2],
+                    "score": score[0],
+                }
+                for index, score in zip(triple_embeddings_df.index, scores)
+            ]
+
+        if len(retrieve_triples_with_scores) == 0:
+            return []
+    return retrieve_triples_with_scores
 
 
 def get_new_topic_entities(
@@ -356,7 +516,9 @@ def get_new_topic_entities(
     return list(new_topic_entities)
 
 
-def reasoning(question: str, cluster_chain_of_entities: list[list[tuple[any]]]) -> str:
+def reasoning(
+    question: str, cluster_chain_of_entities: list[list[dict[str, any]]]
+) -> str:
     chain_prompt = "\n".join(
         [
             f"{triple['head']}, {triple['title']}, {triple['tail']}"
@@ -388,7 +550,7 @@ def extract_answer(text: str) -> str:
 
 
 def save_current_cluster_chain(
-    path: str, cluster_chain_of_entities: list[list[tuple[any]]], round_count: int
+    path: str, cluster_chain_of_entities: list[list[dict[str, any]]], round_count: int
 ) -> None:
     all_triples = [[]]
     for cluster in cluster_chain_of_entities:
@@ -409,7 +571,7 @@ def save_current_cluster_chain(
 
 
 def generate_answer(
-    question: str, cluster_chain_of_entities: list[list[tuple[any]]]
+    question: str, cluster_chain_of_entities: list[list[dict[str, any]]]
 ) -> tuple[str, str]:
     chain_prompt = "\n".join(
         [
@@ -471,17 +633,19 @@ if __name__ == "__main__":
         choices=["llm", "llm_embedding", "embedding"],
         default="llm",
     )
-    # arg_parser.add_argument(
-    #     "--traverse_step",
-    #     type=str,
-    #     choices=["entity_relation", "triple"],
-    #     default="entity_relation",
-    # )
+    arg_parser.add_argument(
+        "--traverse_step",
+        type=str,
+        choices=["entity_relation", "triple"],
+        default="entity_relation",
+    )
     args = arg_parser.parse_args()
 
     # path
     DATA_PATH = args.path
-    ARG_ID = f"{args.method_for_query_entity}__{args.method_to_score}"
+    ARG_ID = (
+        f"{args.method_for_query_entity}__{args.method_to_score}__{args.traverse_step}"
+    )
     REASONING_DIR_NAME = f"reasoning_path__{ARG_ID}"
     if not os.path.exists(f"{DATA_PATH}/construction"):
         exit()
@@ -600,75 +764,105 @@ if __name__ == "__main__":
     while not done:
         logging.info(f"\n===== Round {round_count}: start from {topic_entities} =====")
 
-        # === relation ===
-        current_entity_relations_list = []
+        if args.traverse_step == "entity_relation":
+            # === relation ===
+            current_entity_relations_list = []
 
-        for idx, entity in enumerate(topic_entities):
-            try:
-                # find all adjacent relations not retrieved yet
-                all_unused_relations = unused_relation_search(
-                    G, entity, cluster_chain_of_entities
-                )
-                if len(all_unused_relations) == 0:
-                    logging.info(f"{entity}: 0 relation selected")
+            for idx, entity in enumerate(topic_entities):
+                try:
+                    # find all adjacent relations not retrieved yet
+                    all_unused_adjacent_triples = unused_adjacent_triple_search(
+                        G, entity, cluster_chain_of_entities
+                    )
+                    if len(all_unused_adjacent_triples) == 0:
+                        logging.info(f"{entity}: 0 relation selected")
+                        continue
+
+                    # score the relations
+                    retrieve_relations_with_scores = relation_prune(
+                        entity,
+                        all_unused_adjacent_triples,
+                        question,
+                        args.method_to_score,
+                    )
+                    current_entity_relations_list.extend(retrieve_relations_with_scores)
+
+                    logging.info(
+                        f"{entity}: {len(retrieve_relations_with_scores)} relation selected\n{retrieve_relations_with_scores}"
+                    )
+                except KeyError:
+                    logging.error(f"{entity}: not found")
+
+            logging.info(
+                f"\ncurrent_entity_relations_list:\n{current_entity_relations_list}"
+            )
+
+            if len(current_entity_relations_list) == 0:
+                break
+
+            # === entity ===
+            all_selected_edges = []
+
+            for entity_relation in current_entity_relations_list:
+                entity = entity_relation["entity"]
+                relation = entity_relation["relation"]
+                score = entity_relation["score"]
+
+                # find all adjacent nodes with the relation
+                adjacent_edges_with_relation = entity_search(G, entity, relation)
+                entity_candidates = list(adjacent_edges_with_relation.keys())
+
+                if len(entity_candidates) == 0:
                     continue
 
-                # score the relations
-                retrieve_relations_with_scores = relation_prune(
+                # score the entities
+                scores = entity_score(
+                    question,
+                    entity_relation["relation"],
+                    entity_candidates,
+                    entity_relation["score"],
+                    args.method_to_score,
+                )
+
+                # add score to edges
+                for idx, entity in enumerate(entity_candidates):
+                    adjacent_edges_with_relation[entity]["score"] = scores[idx]
+
+                all_selected_edges.extend(list(adjacent_edges_with_relation.values()))
+
+            logging.info(f"\nall_selected_edges:\n{all_selected_edges}")
+
+            important_edges = prune_by_score(all_selected_edges)
+            logging.info(f"\nimportant_edges:\n{important_edges}")
+        elif args.traverse_step == "triple":
+            all_selected_edges = []
+
+            for idx, entity in enumerate(topic_entities):
+                # find all adjacent relations not retrieved yet
+                all_unused_adjacent_triples = unused_adjacent_triple_search(
+                    G, entity, cluster_chain_of_entities
+                )
+                if len(all_unused_adjacent_triples) == 0:
+                    logging.info(f"{entity}: 0 triple selected")
+                    continue
+
+                # score the triples
+                retrieve_triples_with_scores = triple_prune(
                     entity,
-                    all_unused_relations,
+                    all_unused_adjacent_triples,
                     question,
                     args.method_to_score,
                 )
-                current_entity_relations_list.extend(retrieve_relations_with_scores)
+                all_selected_edges.extend(retrieve_triples_with_scores)
 
                 logging.info(
-                    f"{entity}: {len(retrieve_relations_with_scores)} relation selected\n{retrieve_relations_with_scores}"
+                    f"{entity}: {len(retrieve_triples_with_scores)} triple selected\n{retrieve_triples_with_scores}"
                 )
-            except KeyError:
-                logging.error(f"{entity}: not found")
 
-        logging.info(
-            f"\ncurrent_entity_relations_list:\n{current_entity_relations_list}"
-        )
+            logging.info(f"\nall_selected_edges:\n{all_selected_edges}")
 
-        if len(current_entity_relations_list) == 0:
-            break
-
-        # === entity ===
-        all_selected_edges = []
-
-        for entity_relation in current_entity_relations_list:
-            entity = entity_relation["entity"]
-            relation = entity_relation["relation"]
-            score = entity_relation["score"]
-
-            # find all adjacent nodes with the relation
-            adjacent_edges_with_relation = entity_search(G, entity, relation)
-            entity_candidates = list(adjacent_edges_with_relation.keys())
-
-            if len(entity_candidates) == 0:
-                continue
-
-            # score the entities
-            scores = entity_score(
-                question,
-                entity_relation["relation"],
-                entity_candidates,
-                entity_relation["score"],
-                args.method_to_score,
-            )
-
-            # add score to edges
-            for idx, entity in enumerate(entity_candidates):
-                adjacent_edges_with_relation[entity]["score"] = scores[idx]
-
-            all_selected_edges.extend(list(adjacent_edges_with_relation.values()))
-
-        logging.info(f"\nall_selected_edges:\n{all_selected_edges}")
-
-        important_edges = entity_prune(all_selected_edges)
-        logging.info(f"\nimportant_edges:\n{important_edges}")
+            important_edges = prune_by_score(all_selected_edges)
+            logging.info(f"\nimportant_edges:\n{important_edges}")
 
         # update
         topic_entities = get_new_topic_entities(important_edges, topic_entities)
@@ -678,7 +872,10 @@ if __name__ == "__main__":
             show_adjacent_relations(important_edges)
 
             for idx in range(len(important_edges)):
-                del important_edges[idx]["score"]
+                try:
+                    del important_edges[idx]["score"]
+                except KeyError:
+                    logging.error(f"Score not found in {important_edges[idx]}")
             cluster_chain_of_entities.append(important_edges)
 
             save_current_cluster_chain(

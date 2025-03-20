@@ -16,6 +16,15 @@ Score: 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
 The movie that matches the given criteria is "So Undercover" with Miley Cyrus and produced by Tobin Armbrust. Therefore, the score for "So Undercover" would be 1, and the scores for all other entities would be 0.
 """
 
+extract_triple_prompt = """Please retrieve {top_k} triples (separated by semicolon) that contribute to the question and rate their contribution on a scale from 0 to 1 (the sum of the scores of {top_k} relations is 1).
+Q: Name the president of the country whose main spoken language was Brahui in 1980?
+Topic Entity: Brahui Language
+Triples: (Brahui Language | main country | Pakistan); (brh | corresponds to | Brahui Language); (Arabic script | used by | Brahui Language); (Brahui Language | countries spoken in | Pakistan); (Brahui Language | parent language | Dravidian); (Brahui Language | region | Balochistan)
+A: 
+1. {{(Brahui Language | main country | Pakistan) (Score: 0.5)}}: This triple remains the most relevant since the focus of the question is on identifying the country where Brahui was the main spoken language in 1980, directly tied to the question.
+2. {{(Brahui Language | countries spoken in | Pakistan) (Score: 0.3)}}: This triple confirms and reinforces that Brahui is spoken in Pakistan, supporting the primary answer and narrowing the search.
+3. {{(Brahui Language | region | Balochistan) (Score: 0.2)}}: I would prioritize this triple over "parent language" because it adds geographical context that is directly relevant to identifying Pakistan. Understanding that Balochistan is a key region where Brahui is spoken enhances the overall relevance.
+"""
 
 prompt_evaluate = """Given a question and the associated retrieved knowledge graph triplets (entity, relation, entity), you are asked to answer whether it's sufficient for you to answer the question with these triplets and your knowledge (Yes or No).
 Q: Find the person who said \"Taste cannot be controlled by law\", what did this person die from?
@@ -100,7 +109,6 @@ A: First, China, Norway, Finland, Estonia and Georgia is close to Russia. Second
 
 Q: What drug did the actor who portrayed the character Urethane Wheels Guy overdosed on?
 A: First, Mitchell Lee Hedberg portrayed character Urethane Wheels Guy. Second, Mitchell Lee Hedberg overdose Heroin. The answer is {Heroin}."""
-
 
 cot_prompt = """Q: What state is home to the university that is represented in sports by George Washington Colonials men's basketball?
 A: First, the education institution has a sports team named George Washington Colonials men's basketball in is George Washington University , Second, George Washington University is in Washington D.C. The answer is {Washington, D.C.}.
