@@ -1,9 +1,13 @@
 .vscode
-lib
 venv
-__pycache__
+lib
 
-question_*
+tempCodeRunnerFile.py
+__pycache__
 
 test.ipynb
 test_*
+temp_*
+
+exp_*
+!exp_data/.gitkeep
