@@ -1,6 +1,7 @@
 import re
 from typing import Optional
 import numpy as np
+import ollama
 from ollama import Client
 
 
@@ -30,11 +31,33 @@ class LLM:
 
     def chat(self, messages: list[dict[str, str]]) -> str:
         """[{"role": "user", "content": "Why is sky blue?"}]"""
-        response = self.ollama_client.chat(
-            model=self.llm_model,
-            messages=messages,
-            options={"max_tokens": 1000, "temperature": 0},
-        ).message.content
+        try:
+            response = self.ollama_client.chat(
+                model=self.llm_model,
+                messages=messages,
+                options={"max_tokens": 1000, "temperature": 0},
+            ).message.content
+        except ollama._types.ResponseError:
+            messages1 = [messages[0]] + [
+                {
+                    "role": "user",
+                    "content": messages[1]["content"][
+                        : len(messages[1]["content"]) // 2
+                    ],
+                }
+            ]
+            messages2 = [messages[0]] + [
+                {
+                    "role": "user",
+                    "content": messages[1]["content"][
+                        len(messages[1]["content"]) // 2 :
+                    ],
+                }
+            ]
+            response1 = self.chat(messages1)
+            response2 = self.chat(messages2)
+            response = response1 + response2
+
         return response
 
     def embed(self, text_list: list[str]) -> dict[str, np.ndarray]:

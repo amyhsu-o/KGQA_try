@@ -31,14 +31,20 @@ class NER:
     def extract_entities(self, text: str) -> dict[str, any]:
         """return entity format: 'thomas jeffrey hanks': 'person'"""
 
-        # entity format: {'start': 2, 'end': 8, 'text': 'thomas', 'label': 'person', 'score': 0.9884123206138611}
-        entities = self.ner_model.predict_entities(text, NER.entity_labels)
+        max_len = self.ner_model.config.max_len
+        if len(text) <= max_len:
+            # entity format: {'start': 2, 'end': 8, 'text': 'thomas', 'label': 'person', 'score': 0.9884123206138611}
+            entities = self.ner_model.predict_entities(text, NER.entity_labels)
 
-        # entity format: 'thomas jeffrey hanks': 'person'
-        entities = self._merge_entities(text, entities)
+            # entity format: 'thomas jeffrey hanks': 'person'
+            entities = self._merge_entities(text, entities)
 
-        # turn entity text to lowercase
-        entities = {entity.lower(): label for entity, label in entities.items()}
+            # turn entity text to lowercase
+            entities = {entity.lower(): label for entity, label in entities.items()}
+        else:
+            entities1 = self.extract_entities(text[: len(text) // 2])
+            entities2 = self.extract_entities(text[len(text) // 2 :])
+            entities = {**entities1, **entities2}
 
         return entities
 
