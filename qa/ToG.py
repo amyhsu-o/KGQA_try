@@ -193,7 +193,7 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
 
         # 1. initialization
         current_query = query
-        query_topic_entities_score = self._get_topic_entities(current_query)
+        query_topic_entities_score = self._get_topic_entities(current_query, used_kg)
         topic_entities_score = query_topic_entities_score.copy()
         round_count = 0
         data_sufficient = False
@@ -273,26 +273,21 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
                 # update for next round
                 if self.generate_new_query:
                     current_query = self._generate_query(query, used_kg)
-                    topic_entities_score = self._get_topic_entities(current_query)
+                    topic_entities_score = self._get_topic_entities(
+                        current_query, used_kg
+                    )
 
                 else:
                     topic_entities_score = self._update_topic_entities(
                         selected_triples_score, triples_topic
                     )
+                    if len(topic_entities_score) == 0:
+                        topic_entities_score = self._get_topic_entities(
+                            current_query, used_kg
+                        )
 
                 if len(topic_entities_score) == 0:
-                    topic_entities_score = self._get_topic_entities(current_query)
-                    if (
-                        sum(
-                            [
-                                len(list(used_kg[topic_entity].keys()))
-                                != len(list(self.kg[topic_entity].keys()))
-                                for topic_entity in topic_entities_score
-                            ]
-                        )
-                        == 0
-                    ):
-                        early_stop = True
+                    early_stop = True
 
         # collect information
         retrieval_records = {
@@ -303,7 +298,7 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
         }
         return retrieval_records
 
-    def _get_topic_entities(self, query: str) -> dict[str, float]:
+    def _get_topic_entities(self, query: str, used_kg: KG) -> dict[str, float]:
         if self.query_topic_entities_selecting_method == "llm":
             # ask LLM to extract topic entities
             response = self.llm_model.chat(
@@ -329,23 +324,37 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
                 {"entity": entity, "score": 1 / len(results)} for entity in results
             ]
 
+        unused_entities = self._get_unused_entities(used_kg)
+
         # match with KG nodes
         topic_entities = {
             result["entity"]: result["score"]
             for result in results
-            if result["entity"] in self.kg.entities.keys()
+            if result["entity"] in unused_entities
         }
 
         for result in results:
             entity = result["entity"].lower()
             score = result["score"]
             if result["entity"] not in topic_entities:
-                best_match = get_fuzzy_best_match(entity, list(self.kg.entities.keys()))
+                best_match = get_fuzzy_best_match(entity, unused_entities, threshold=0)
                 best_match = list(best_match.keys())
                 if len(best_match) != 0:
                     topic_entities[best_match[0]] = score
 
         return topic_entities
+
+    def _get_unused_entities(self, used_kg: KG) -> list[str]:
+        unused_entities = []
+        for entity in self.kg.entities:
+            if entity not in used_kg:
+                unused_entities.append(entity)
+            else:
+                neighbors = self.kg[entity].keys()
+                for neighbor in neighbors:
+                    if not used_kg.has_edge(entity, neighbor):
+                        unused_entities.append(entity)
+        return unused_entities
 
     def _relation_search(self, used_kg: KG, entity: str) -> list[str]:
         neighbor_relations = set()
@@ -461,7 +470,7 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
                 query_emb, self.kg.relations_emb, threshold=0, top_n=self.top_n
             )
             results = [
-                {"relation": match, "score": score}
+                {"entity": match, "score": score}
                 for match, score in best_match_score.items()
             ]
 

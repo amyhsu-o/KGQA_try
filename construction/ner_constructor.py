@@ -4,6 +4,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import re
+import logging
 import ast
 from typing import Optional
 from tqdm import tqdm
@@ -142,7 +143,7 @@ class NERConstructor:
             try:
                 parsed_result.append(ast.literal_eval(match))
             except SyntaxError:
-                print(f"Failed to parse: {match}")
+                logging.info(f"Failed to parse: {match}")
         return parsed_result
 
 
