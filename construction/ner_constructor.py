@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))  # noqa
 
 import re
 import ast
@@ -75,7 +75,8 @@ class NERConstructor:
         chunk_info = {}
         if source:
             chunk_info["source"] = source
-        chunk_info.update({"chunk": chunk, "entities": entities, "triples": triples})
+        chunk_info.update(
+            {"chunk": chunk, "entities": entities, "triples": triples})
 
         return chunk_info
 
