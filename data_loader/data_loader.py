@@ -100,16 +100,25 @@ Accuracy: False
                     break
         return queries_info_dict
 
-    def load_contents(self, **kwargs) -> dict[int, dict[str, str]]:
+    def load_contents(
+        self, **kwargs
+    ) -> tuple[dict[int, dict[str, any]], dict[int, dict[str, str]]]:
         """query_ids: list[int], is required
 
+        queries_info_dict
+        - key: query_id
+        - value: query_info
+            - key: interaction_id, query_time, domain, question_type, static_or_dynamic, query, answer, search_results, split, alt_ans
+            - search_result: dict_keys(['page_name', 'page_url', 'page_snippet', 'page_result', 'page_last_modified']
+
+        queries_content_dict
         - key: query_id
         - value: dict of page_content
 
         >>> query_ids = [2, 54, 92, 98, 272]
         >>>
         >>> data_loader = CRAGDataLoader()
-        >>> queries_content_dict = data_loader.load_contents(query_ids=query_ids)
+        >>> queries_info_dict, queries_content_dict = data_loader.load_contents(query_ids=query_ids)
         """
         if "query_ids" not in kwargs:
             raise ValueError("Need to input query_ids")
@@ -136,7 +145,7 @@ Accuracy: False
 
             queries_content_dict[query_id] = contents
 
-        return queries_content_dict
+        return queries_info_dict, queries_content_dict
 
     def _parse_html(self, text: str) -> str:
         soup = BeautifulSoup(text, "html.parser")
@@ -159,18 +168,11 @@ if __name__ == "__main__":
     query_ids = [2, 54, 92, 98, 272]
     data_loader = CRAGDataLoader()
 
-    # load query info
-    queries_info_dict = data_loader.load_query_info(query_ids)
-    for query_id, query_info in queries_info_dict.items():
-        print(f"query_id: {query_id}")
-        for key, info in query_info.items():
-            print(
-                f"{key}: {info if key != 'search_results' else f'{len(info)} ({info[0].keys()})'}"
-            )
-        print()
+    queries_info_dict, queries_content_dict = data_loader.load_contents(
+        query_ids=query_ids
+    )
 
-    # load content & chunk
-    queries_content_dict = data_loader.load_contents(query_ids=query_ids)
+    # chunk contents
     queries_chunks_dict = {}
     for query_id in query_ids:
         page_content_dict = queries_content_dict[query_id]
@@ -180,9 +182,16 @@ if __name__ == "__main__":
         }
         queries_chunks_dict[query_id] = page_chunks_dict
 
-    # show chunks info
+    # show query info
     for query_id in query_ids:
         print(f"query_id: {query_id}")
+        # query info
+        for key, info in queries_info_dict[query_id].items():
+            print(
+                f"{key}: {info if key != 'search_results' else f'{len(info)} ({info[0].keys()})'}"
+            )
+
+        # chunk info
         page_chunks_dict = queries_chunks_dict[query_id]
         for idx, (title, chunks) in enumerate(page_chunks_dict.items()):
             print(f"{title} - # of chunks: {len(chunks)}")
