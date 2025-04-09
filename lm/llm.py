@@ -1,5 +1,6 @@
 import re
 from typing import Optional
+import logging
 import numpy as np
 import ollama
 from ollama import Client
@@ -11,6 +12,7 @@ class LLM:
         base_url: Optional[str] = None,
         llm_model: Optional[str] = None,
         embed_model: Optional[str] = None,
+        verbose: bool = False,
     ):
         if base_url:
             self.base_url = base_url
@@ -29,6 +31,8 @@ class LLM:
 
         self.ollama_client = Client(host=self.base_url)
 
+        self.verbose = verbose
+
     def chat(self, messages: list[dict[str, str]]) -> str:
         """[{"role": "user", "content": "Why is sky blue?"}]"""
         try:
@@ -36,7 +40,17 @@ class LLM:
                 model=self.llm_model,
                 messages=messages,
                 options={"max_tokens": 1000, "temperature": 0},
-            ).message.content
+            ).message
+
+            if self.verbose:
+                logging.info("=== LLM ===")
+                for message in messages:
+                    if message["role"] == "system":
+                        continue
+                    logging.info(f"[{message['role']}]: {message['content']}")
+                logging.info(f"[{response.role}]: {response.content}")
+
+            return response.content
         except ollama._types.ResponseError:
             messages1 = [messages[0]] + [
                 {
