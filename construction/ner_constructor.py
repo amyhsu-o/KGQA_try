@@ -31,10 +31,12 @@ class NERConstructor:
     >>> print(f"Done: {datetime.now()}")
     """
 
-    def __init__(self, logger: logging.Logger, llm_verbose: bool = False):
+    def __init__(
+        self, llm_verbose: bool = False, logger: logging.Logger = logging.getLogger()
+    ):
         # models
         self.ner_model = NER()
-        self.llm_model = LLM(logger, verbose=llm_verbose)
+        self.llm_model = LLM(verbose=llm_verbose, logger=logger)
         self.logger = logger
 
     def process_chunks(
