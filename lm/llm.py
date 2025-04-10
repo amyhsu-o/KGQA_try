@@ -49,8 +49,8 @@ class LLM:
                 for message in messages:
                     if message["role"] == "system":
                         continue
-                    self.logger.info(f"[{message['role']}]: {message['content']}")
-                self.logger.info(f"[{response.role}]: {response.content}")
+                    self.logger.info(f"[{message['role']}]:\n{message['content']}")
+                self.logger.info(f"[{response.role}]:\n{response.content}")
 
             return response.content
         except ollama._types.ResponseError:

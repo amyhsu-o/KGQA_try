@@ -34,6 +34,9 @@ class KG(nx.MultiGraph):
             entity2 = triple["object"]
             relationship = triple["relationship"]
 
+            if self.has_edge(entity1, entity2, relationship):
+                continue
+
             try:
                 if self.has_node(entity1) and entities.get(entity1) is None:
                     pass

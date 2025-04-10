@@ -15,7 +15,7 @@ from utils.similarity import get_fuzzy_best_match, get_cosine_similarity_best_ma
 
 
 class ToG(QA):
-    extract_topic_entities_prompt = """Please retrieve {top_k} topic entities that contribute to answering the following question, and rate their contribution on a scale from 0 to 1. The scores must sum to 1. Return your answer in a list format where each entry contains:
+    extract_topic_entities_prompt = """Please retrieve {top_k} topic entities that contribute to answering the following question, and rate their contribution on a scale from 0 to 1. The scores must sum to 1.
 Q: Name the president of the country whose main spoken language was Brahui in 1980?
 A:
 1. {{Brahui Language (Score: 0.4)}}: This is the key clue in the question and helps identify the country being referred to.
@@ -46,9 +46,8 @@ A:
 6. {{A Walk Among the Tombstones (Score: 0.0)}}: This entity is not relevant to the question.
 """
 
-    prune_triple_prompt = """Please retrieve {top_k} triples (separated by semicolon) that contribute to the question and rate their contribution on a scale from 0 to 1 (the sum of the scores of {top_k} relations is 1).
+    path_select_prompt = """Please retrieve {top_k} triples (separated by semicolon) that contribute to the question and rate their contribution on a scale from 0 to 1 (the sum of the scores of {top_k} relations is 1). Format your answer with parentheses and curly braces like {{(entity1 | relation | entity2) (Score: x.x)}}.
 Q: Name the president of the country whose main spoken language was Brahui in 1980?
-Topic Entity: Brahui Language
 Triples: (Brahui Language | main country | Pakistan); (brh | corresponds to | Brahui Language); (Arabic script | used by | Brahui Language); (Brahui Language | countries spoken in | Pakistan); (Brahui Language | parent language | Dravidian); (Brahui Language | region | Balochistan)
 A: 
 1. {{(Brahui Language | main country | Pakistan) (Score: 0.5)}}: This triple remains the most relevant since the focus of the question is on identifying the country where Brahui was the main spoken language in 1980, directly tied to the question.
@@ -155,32 +154,42 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
         self,
         kg: KG,
         top_n: int = 3,
-        query_topic_entities_selecting_method: str = "llm",
+        query_topic_entities_select_method: str = "llm",
         scoring_method: str = "llm",
+        path_select_method: str = "score",
         generate_new_query: bool = False,
         integration_style: str = "triples",
+        integrate_reasoning_response: bool = False,
+        max_iterations: int = 10,
         llm_verbose: bool = False,
+        logger: logging.Logger = logging.getLogger(),
     ):
         """
         - `kg`
         - `top_n`: for pruning
-        - `query_topic_entities_selecting_method`: for query -> entities; llm, ner
-        - `scoring_method`: for pruning relations/entities; llm, embedding
-        - `generate_new_query`: for generating new query after a round; True, False
-        - `integration_style`: for how to integrate the retrieved triples into LLM; triples, paths, trees
+        - `query_topic_entities_select_method`: for query -> entities; [llm], ner
+        - `scoring_method`: for pruning relations/entities; [llm], embedding
+        - `path_select_method`: for pruning retrieved triples; [score], embedding, llm_w_history, llm_wo_history
+        - `generate_new_query`: for generating new query after a round; [False], True
+        - `integration_style`: for how to integrate the retrieved triples into LLM; [triples], paths, trees
+        - `integrate_reasoning_response`: for whether to add reasoning response from LLM into answering step; [False], True
         """
-        self.llm_model = LLM(verbose=llm_verbose)
+        self.logger = logger
+        self.llm_model = LLM(verbose=llm_verbose, logger=self.logger)
         self.kg = kg
         self.top_n = top_n
-        self.query_topic_entities_selecting_method = (
-            query_topic_entities_selecting_method
+        self.query_topic_entities_select_method = (
+            query_topic_entities_select_method
         )
         self.scoring_method = scoring_method
         if scoring_method == "embedding":
-            logging.info("Get entities & relations embedding...")
+            self.logger.info("Get entities & relations embedding...")
             self._get_all_embeddings()
+        self.path_select_method = path_select_method
         self.generate_new_query = generate_new_query
         self.integration_style = integration_style
+        self.integrate_reasoning_response = integrate_reasoning_response
+        self.max_iterations = max_iterations
 
     def _get_all_embeddings(self):
         self.kg.entities_emb = self.llm_model.embed(list(self.kg.entities.keys()))
@@ -189,7 +198,7 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
         )
         self.kg.relations_emb = self.llm_model.embed(unique_relations)
 
-    def retrieve(self, query: str, root_path: Optional[str] = None) -> KG:
+    def retrieve(self, query: str, root_path: Optional[str] = None) -> dict[str, any]:
         used_kg = KG()
 
         # 1. initialization
@@ -202,8 +211,8 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
 
         while not data_sufficient and not early_stop:
             round_count += 1
-            logging.info(f"=== Round {round_count}: {current_query} ===")
-            logging.info(f"=> Topic entities: {topic_entities_score}")
+            self.logger.info(f"=== Round {round_count}: {current_query} ===")
+            self.logger.info(f"=> Topic entities: {topic_entities_score}")
 
             # 2. exploration
             triples_score = {}
@@ -214,7 +223,7 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
                 relations_score = self._relation_prune(
                     current_query, topic_entity, relations
                 )
-                logging.info(f"    {topic_entity} => Relations: {relations_score}")
+                self.logger.info(f"    {topic_entity} => Relations: {relations_score}")
 
                 # 2-2. entity exploration
                 for relation, relation_score in relations_score.items():
@@ -222,7 +231,9 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
                     entities_score = self._entity_prune(
                         current_query, relation, entities
                     )
-                    logging.info(f"        {relation} => Entities: {entities_score}")
+                    self.logger.info(
+                        f"        {relation} => Entities: {entities_score}"
+                    )
 
                     # update triples score
                     for entity, entity_score in entities_score.items():
@@ -244,34 +255,46 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
                         triples_topic[triple] = triples_topic.get(triple, set())
                         triples_topic[triple].add(topic_entity)
 
+            # run again when nothing retrieved
+            if len(triples_score) == 0:
+                topic_entities_score = self._update_topic_entities(
+                    triples_score, triples_topic
+                )
+                if len(topic_entities_score) == 0:
+                    topic_entities_score = self._get_topic_entities(
+                        current_query, used_kg
+                    )
+                round_count -= 1
+                continue
+
             # 3. pruning
-            selected_triples_score = self._path_select(triples_score)
+            selected_triples_score = self._triple_prune(query, triples_score, used_kg)
             for triple in selected_triples_score:
                 self._add_triple_to_used_kg(used_kg, triple, round_count)
 
             # show progress
-            logging.info("=> Triples:")
+            self.logger.info("=> Triples:")
             for triple, score in sorted(
                 list(selected_triples_score.items()), key=lambda x: x[1], reverse=True
             ):
-                logging.info(f"{triple}: {score:.2f}")
+                self.logger.info(f"{triple}: {score:.2f}")
 
-            logging.info("=> Retrieved subgraph:")
+            self.logger.info("=> Retrieved subgraph:")
             retrieved_subgraph = used_kg.format_as_trees(["round"])
-            logging.info("\n" + retrieved_subgraph)
+            self.logger.info("\n" + retrieved_subgraph)
 
             if root_path is not None:
                 if not os.path.exists(root_path):
                     os.makedirs(root_path)
                 used_kg.save_graph(f"{root_path}/used_graph_{round_count}.html")
 
-            if round_count == 10:
+            if round_count == self.max_iterations:
                 early_stop = True
 
             # 4. reasoning
-            data_sufficient = self._reasoning(query, used_kg)
+            data_sufficient, reasoning_response = self._reasoning(query, used_kg)
 
-            if not data_sufficient:
+            if not data_sufficient and not early_stop:
                 # update for next round
                 if self.generate_new_query:
                     new_query = self._generate_query(query, used_kg)
@@ -299,11 +322,12 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
             "used_kg": used_kg,
             "round_count": round_count,
             "early_stop": early_stop,
+            "reasoning_response": reasoning_response,
         }
         return retrieval_records
 
     def _get_topic_entities(self, query: str, used_kg: KG) -> dict[str, float]:
-        if self.query_topic_entities_selecting_method == "llm":
+        if self.query_topic_entities_select_method == "llm":
             # ask LLM to extract topic entities
             response = self.llm_model.chat(
                 [
@@ -318,10 +342,10 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
             )
             results = self.llm_model.parse_response(
                 response,
-                r"(?:\{|\*{2})(.*?)\s*\(Score:\s*([0-9.]+)\)\s*(?:\}|\*{2})",
+                r"(?:\{|\*{2})(.*?)\s*\(Score:\s*([0-9.]+)\)[ :]*(?:\}|\*{2})",
                 {"entity": str, "score": float},
             )
-        elif self.query_topic_entities_selecting_method == "ner":
+        elif self.query_topic_entities_select_method == "ner":
             ner_model = NER()
             results = ner_model.extract_entities(query)
             results = [
@@ -330,7 +354,7 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
 
         # match with KG nodes
         unused_entities = self._get_unused_entities(used_kg)
-        topic_entities = self._match("entity", results, unused_entities)
+        topic_entities = self._match_score("entity", results, unused_entities)
 
         return topic_entities
 
@@ -349,7 +373,7 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
                         break
         return list(unused_entities)
 
-    def _match(
+    def _match_score(
         self,
         label_name: str,
         score_results: list[dict[str, any]],
@@ -410,6 +434,8 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
 
         {'directed': 0.6, 'collaborated with': 0.3, 'was directed by': 0.1}
         """
+        if len(relations) == 0:
+            return {}
         if len(relations) == 1:
             return {relations[0]: 1.0}
 
@@ -432,7 +458,7 @@ A: """,
             )
             results = self.llm_model.parse_response(
                 response,
-                r"(?:\{|\*{2})(.*?)\s*\(Score:\s*([0-9.]+)\)\s*(?:\}|\*{2})",
+                r"(?:\{|\*{2})(.*?)\s*\(Score:\s*([0-9.]+)\)[ :]*(?:\}|\*{2})",
                 {"relation": str, "score": float},
             )
         elif self.scoring_method == "embedding":
@@ -450,7 +476,7 @@ A: """,
             ]
 
         # match with KG relations
-        match_relations = self._match("relation", results, relations)
+        match_relations = self._match_score("relation", results, relations)
 
         return match_relations
 
@@ -459,7 +485,7 @@ A: """,
         for neighbor_entity, edges in self.kg[entity].items():
             for edge in edges.values():
                 if edge["label"] == relation and not used_kg.has_edge(
-                    entity, neighbor_entity, edge
+                    edge["subject"], edge["object"], edge["label"]
                 ):
                     neighbor_entities.add(neighbor_entity)
 
@@ -472,6 +498,8 @@ A: """,
 
         {'Tom Hanks': 0.6, 'Steven Spielberg': 0.3, 'Jaws': 0.1}
         """
+        if len(entities) == 0:
+            return {}
         if len(entities) == 1:
             return {entities[0]: 1.0}
 
@@ -494,7 +522,7 @@ A: """,
             )
             results = self.llm_model.parse_response(
                 response,
-                r"(?:\{|\*{2})(.*?)\s*\(Score:\s*([0-9.]+)\)\s*(?:\}|\*{2})",
+                r"(?:\{|\*{2})(.*?)\s*\(Score:\s*([0-9.]+)\)[ :]*]*(?:\}|\*{2})",
                 {"entity": str, "score": float},
             )
         elif self.scoring_method == "embedding":
@@ -512,14 +540,84 @@ A: """,
             ]
 
         # match with KG entities
-        match_entities = self._match("entity", results, entities)
+        match_entities = self._match_score("entity", results, entities)
 
         return match_entities
 
-    def _path_select(
+    def _triple_prune(
         self,
+        query: str,
         triples_score: dict[tuple[str, str, str], float],
+        used_kg: KG,
     ) -> dict[tuple[str, str, str], float]:
+        """- `path_select_method`: for pruning retrieved triples; [score], embedding, llm_w_history, llm_wo_history"""
+        if len(triples_score) <= 1:
+            return {triple: 1 for triple in triples_score}
+
+        if self.path_select_method == "embedding":
+            query_emb = self.llm_model.embed([query])[query]
+
+            # Generate embeddings for triples
+            triples_str_list = [" ".join(triple) for triple in triples_score]
+            embeddings = self.llm_model.embed(triples_str_list)
+            triples_emb = {
+                triple: embeddings[triple_str]
+                for triple, triple_str in zip(triples_score, triples_str_list)
+            }
+
+            triples_score = get_cosine_similarity_best_match(
+                query_emb,
+                triples_emb,
+                threshold=0,
+                top_n=self.top_n,
+            )
+        elif self.path_select_method in ["llm_wo_history", "llm_w_history"]:
+            formatted_triples = ""
+            for triple in triples_score:
+                formatted_triples += f"({' | '.join(triple)})" + "; "
+
+            # ask LLM to prune triples
+            if self.path_select_method == "llm_wo_history":
+                user_prompt = f"""Q: {query}
+Triples: {formatted_triples}
+A: """
+            else:
+                retrieved_data = self._format_retrieved_data(used_kg)
+                user_prompt = f"""Q: {query}
+Knowledge Graph:
+{retrieved_data}
+
+The above knowledge graph shows what is already known. Please choose and score the triples below that are missing from the graph, but potentially useful for answering the question.
+
+Triples: {formatted_triples}
+A: """
+
+            response = self.llm_model.chat(
+                [
+                    {
+                        "role": "system",
+                        "content": ToG.path_select_prompt.format(top_k=self.top_n),
+                    },
+                    {
+                        "role": "user",
+                        "content": user_prompt,
+                    },
+                ]
+            )
+            results = self.llm_model.parse_response(
+                response,
+                r"(?:\{|\*{2})\(([^()]+)\)\s*\(Score:\s*([0-9.]+)\)[ :]*(?:\}|\*{2})",
+                {"triple": str, "score": float},
+            )
+            triples_str_list = [" | ".join(triple) for triple in triples_score]
+            triples_score = {}
+            for triple_str, score in self._match_score(
+                "triple", results, triples_str_list
+            ).items():
+                triple = tuple([element.strip() for element in triple_str.split(" | ")])
+                triples_score[triple] = score
+
+        # select top_n triples with score
         selected_triples = sorted(
             triples_score.items(),
             key=lambda x: x[1],
@@ -611,7 +709,7 @@ A: """,
             new_topic_entities_score[entity] = round(score / total_score, 2)
         return new_topic_entities_score
 
-    def _reasoning(self, query: str, used_kg: KG) -> bool:
+    def _reasoning(self, query: str, used_kg: KG) -> tuple[bool, str]:
         retrieved_data = self._format_retrieved_data(used_kg)
 
         # ask LLM to check whether the retrieved data is sufficient to answer the question
@@ -635,20 +733,32 @@ A: """
             {"answer": str},
         )
 
-        if len(results) == 0:
-            return False
+        data_sufficient = False
+        if len(results) > 0 and results[0]["answer"] == "yes":
+            data_sufficient = True
 
-        if results[0]["answer"] == "yes":
-            return True
-        else:
-            return False
+        return data_sufficient, response
 
     def answer(self, query: str, root_path: Optional[str] = None) -> str:
         start_time = datetime.now()
         retrieval_records = self.retrieve(query, root_path)
         retrieved_data = self._format_retrieved_data(retrieval_records["used_kg"])
 
-        user_prompt = f"Q: {query}\nKnowledge Graph:\n{retrieved_data}\nA: "
+        if self.integrate_reasoning_response and not retrieval_records["early_stop"]:
+            user_prompt = f"""Q: {query}
+Knowledge Graph:
+{retrieved_data}
+
+Notes:
+{retrieval_records["reasoning_response"]}
+
+A: """
+        else:
+            user_prompt = f"""Q: {query}
+Knowledge Graph:
+{retrieved_data}
+
+A: """
         response = self.llm_model.chat(
             [
                 {"role": "system", "content": ToG.answer_prompt},
@@ -660,9 +770,11 @@ A: """
         )
         end_time = datetime.now()
 
+        retrieval_records["settings"].pop("logger")
         retrieval_records["settings"].pop("llm_model")
         retrieval_records["settings"].pop("kg")
         retrieval_records.pop("used_kg")
+        retrieval_records.pop("reasoning_response")
         answering_records = {
             **retrieval_records,
             "duration": str(end_time - start_time),

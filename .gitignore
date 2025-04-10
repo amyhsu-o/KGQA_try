@@ -5,9 +5,9 @@ lib
 tempCodeRunnerFile.py
 __pycache__
 
-test.ipynb
+*.ipynb
 test_*
 temp_*
-
 exp_*
 !exp_data/.gitkeep
+results.csv
