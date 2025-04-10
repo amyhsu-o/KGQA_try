@@ -1,13 +1,13 @@
 import os
 import json
-from typing import Optional
+from typing import Optional, overload
 import networkx as nx
 import pyvis
 from pyvis.network import Network
 from jinja2 import Template
 
 
-class KG(nx.Graph):
+class KG(nx.MultiGraph):
     """
     >>> chunk_info_list_paths = ["chunk_info_list.json"]
     >>> kg = KG(chunk_info_list_paths)
@@ -107,6 +107,28 @@ class KG(nx.Graph):
             for edge_info in self.edges.values()
         }
 
+    @overload
+    def has_edge(self, node1: str, node2: str) -> bool: ...
+
+    @overload
+    def has_edge(self, node1: str, node2: str, label: str) -> bool: ...
+
+    def has_edge(
+        self,
+        node1: str,
+        node2: str,
+        label: Optional[str] = None,
+    ) -> bool:
+        if label is None:
+            return super().has_edge(node1, node2)
+        elif super().has_edge(node1, node2) is False:
+            return False
+        elif node2 not in self[node1]:
+            return False
+
+        relations = [edge["label"] for edge in self[node1][node2].values()]
+        return label in relations
+
     def save_graph(self, path: str) -> None:
         """path: xxx.html"""
         nt = Network()
@@ -169,11 +191,12 @@ class KG(nx.Graph):
             return formatted_str, visited
         visited.add(root_node)
 
-        neighbors = list(
-            (neighbor, attributes)
-            for neighbor, attributes in self[root_node].items()
-            if attributes["subject"] == root_node
-        )
+        neighbors = [
+            (neighbor, edge)
+            for neighbor, edges in self[root_node].items()
+            for edge in edges.values()
+            if edge["subject"] == root_node
+        ]
 
         for neighbor, relation_attributes in neighbors:
             add_prefix = "└── " if neighbor == neighbors[-1][0] else "├── "
@@ -247,9 +270,10 @@ class KG(nx.Graph):
         visited.add(root_node)
 
         neighbors = [
-            (neighbor, attributes)
-            for neighbor, attributes in self[root_node].items()
-            if attributes["subject"] == root_node
+            (neighbor, edge)
+            for neighbor, edges in self[root_node].items()
+            for edge in edges.values()
+            if edge["subject"] == root_node
         ]
         neighbors.sort(key=lambda x: x[1][by])
 

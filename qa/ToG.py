@@ -158,7 +158,7 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
         query_topic_entities_selecting_method: str = "llm",
         scoring_method: str = "llm",
         generate_new_query: bool = False,
-        integration_style: str = "trees",
+        integration_style: str = "triples",
         llm_verbose: bool = False,
     ):
         """
@@ -335,16 +335,19 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
         return topic_entities
 
     def _get_unused_entities(self, used_kg: KG) -> list[str]:
-        unused_entities = []
+        unused_entities = set()
         for entity in self.kg.entities:
             if entity not in used_kg:
-                unused_entities.append(entity)
+                unused_entities.add(entity)
             else:
                 neighbors = self.kg[entity].keys()
                 for neighbor in neighbors:
-                    if not used_kg.has_edge(entity, neighbor):
-                        unused_entities.append(entity)
-        return unused_entities
+                    if used_kg[entity].get(neighbor) is None or len(
+                        self.kg[entity][neighbor]
+                    ) != len(used_kg[entity][neighbor]):
+                        unused_entities.add(entity)
+                        break
+        return list(unused_entities)
 
     def _match(
         self,
@@ -393,9 +396,10 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
 
     def _relation_search(self, used_kg: KG, entity: str) -> list[str]:
         neighbor_relations = set()
-        for neighbor_entity, attributes in self.kg[entity].items():
-            if not used_kg.has_edge(entity, neighbor_entity):
-                neighbor_relations.add(attributes["label"])
+        for neighbor_entity, edges in self.kg[entity].items():
+            for edge in edges.values():
+                if not used_kg.has_edge(entity, neighbor_entity, edge["label"]):
+                    neighbor_relations.add(edge["label"])
 
         return list(neighbor_relations)
 
@@ -420,9 +424,9 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
                     {
                         "role": "user",
                         "content": f"""Q: {query}
-    Topic Entity: {entity}
-    Relations: {"; ".join(relations)}
-    A: """,
+Topic Entity: {entity}
+Relations: {"; ".join(relations)}
+A: """,
                     },
                 ]
             )
@@ -451,14 +455,15 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
         return match_relations
 
     def _entity_search(self, used_kg: KG, entity: str, relation: str) -> list[str]:
-        neighbor_entities = []
-        for neighbor_entity, attributes in self.kg[entity].items():
-            if attributes["label"] == relation and not used_kg.has_edge(
-                entity, neighbor_entity
-            ):
-                neighbor_entities.append(neighbor_entity)
+        neighbor_entities = set()
+        for neighbor_entity, edges in self.kg[entity].items():
+            for edge in edges.values():
+                if edge["label"] == relation and not used_kg.has_edge(
+                    entity, neighbor_entity, edge
+                ):
+                    neighbor_entities.add(neighbor_entity)
 
-        return neighbor_entities
+        return list(neighbor_entities)
 
     def _entity_prune(
         self, query: str, relation: str, entities: list[str]
@@ -481,9 +486,9 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
                     {
                         "role": "user",
                         "content": f"""Q: {query}
-    Relation: {relation}
-    Entities: {"; ".join(entities)}
-    A: """,
+Relation: {relation}
+Entities: {"; ".join(entities)}
+A: """,
                     },
                 ]
             )
