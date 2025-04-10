@@ -13,6 +13,7 @@ class LLM:
         llm_model: Optional[str] = None,
         embed_model: Optional[str] = None,
         verbose: bool = False,
+        logger: logging.Logger = logging.getLogger(),
     ):
         if base_url:
             self.base_url = base_url
@@ -32,6 +33,7 @@ class LLM:
         self.ollama_client = Client(host=self.base_url)
 
         self.verbose = verbose
+        self.logger = logger
 
     def chat(self, messages: list[dict[str, str]]) -> str:
         """[{"role": "user", "content": "Why is sky blue?"}]"""
@@ -43,12 +45,12 @@ class LLM:
             ).message
 
             if self.verbose:
-                logging.info("=== LLM ===")
+                self.logger.info("=== LLM ===")
                 for message in messages:
                     if message["role"] == "system":
                         continue
-                    logging.info(f"[{message['role']}]: {message['content']}")
-                logging.info(f"[{response.role}]: {response.content}")
+                    self.logger.info(f"[{message['role']}]: {message['content']}")
+                self.logger.info(f"[{response.role}]: {response.content}")
 
             return response.content
         except ollama._types.ResponseError:

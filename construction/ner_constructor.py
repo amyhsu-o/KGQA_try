@@ -31,10 +31,11 @@ class NERConstructor:
     >>> print(f"Done: {datetime.now()}")
     """
 
-    def __init__(self):
+    def __init__(self, logger: logging.Logger, llm_verbose: bool = False):
         # models
         self.ner_model = NER()
-        self.llm_model = LLM()
+        self.llm_model = LLM(logger, verbose=llm_verbose)
+        self.logger = logger
 
     def process_chunks(
         self, chunks: list[str], source: Optional[str] = None
@@ -143,7 +144,7 @@ class NERConstructor:
             try:
                 parsed_result.append(ast.literal_eval(match))
             except SyntaxError:
-                logging.info(f"Failed to parse: {match}")
+                self.logger.info(f"Failed to parse: {match}")
         return parsed_result
 
 

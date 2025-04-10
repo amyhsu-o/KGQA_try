@@ -4,7 +4,7 @@ from lm.llm import LLM
 
 
 def get_fuzzy_best_match(
-    target: str, candidates: list[str], threshold: int = 80, top_n: int = 1
+    target: str, candidates: list[str], threshold: int = 0, top_n: int = 1
 ) -> dict[str, float]:
     best_matches_score = []
     for candidate in candidates:
@@ -21,7 +21,7 @@ def get_fuzzy_best_match(
 def get_cosine_similarity_best_match(
     target_emb: np.ndarray,
     candidates_emb: dict[str, np.ndarray],
-    threshold: int = 0.8,
+    threshold: int = 0,
     top_n: int = 1,
 ) -> dict[str, float]:
     best_matches_score = []
