@@ -1,5 +1,4 @@
 import re
-from typing import Optional
 import logging
 import numpy as np
 import ollama
@@ -9,29 +8,16 @@ from ollama import Client
 class LLM:
     def __init__(
         self,
-        base_url: Optional[str] = None,
-        llm_model: Optional[str] = None,
-        embed_model: Optional[str] = None,
+        base_url: str = "http://localhost:11435",
+        llm_model: str = "phi4:latest",
+        embed_model: str = "nomic-embed-text:latest",
         verbose: bool = False,
         logger: logging.Logger = logging.getLogger(),
     ):
-        if base_url:
-            self.base_url = base_url
-        else:
-            self.base_url = "http://localhost:11435"
-
-        if llm_model:
-            self.llm_model = llm_model
-        else:
-            self.llm_model = "phi4:latest"
-
-        if embed_model:
-            self.embed_model = embed_model
-        else:
-            self.embed_model = "nomic-embed-text:latest"
-
+        self.base_url = base_url
+        self.llm_model = llm_model
+        self.embed_model = embed_model
         self.ollama_client = Client(host=self.base_url)
-
         self.verbose = verbose
         self.logger = logger
 
