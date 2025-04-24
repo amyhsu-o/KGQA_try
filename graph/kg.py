@@ -143,6 +143,17 @@ class KG(nx.MultiGraph):
         nt.force_atlas_2based()
         nt.show(path)
 
+    def __str__(self, style: str = "tree") -> str:
+        if self.number_of_nodes() == 1:
+            return list(self.entities.keys())[0]
+        elif style == "tree":
+            return self.format_as_trees()
+        elif style == "triple":
+            return self.format_as_triples()
+        elif style == "path":
+            return self.format_as_paths()
+        return f"{self.number_of_nodes} entities, {self.number_of_edges()} relations"
+
     def format_as_trees(self, show_attributes: Optional[list[str]] = None) -> str:
         # count the number of times each entity appears as a subject
         subject_entities = [
@@ -222,7 +233,7 @@ class KG(nx.MultiGraph):
 
         return formatted_str, visited
 
-    def format_as_triples(self, by: str) -> str:
+    def format_as_triples(self, by: str = "label") -> str:
         triples = sorted(
             [triple for triple in self.relations],
             key=lambda triple: self.relations[triple][by],
@@ -230,7 +241,7 @@ class KG(nx.MultiGraph):
         formatted_str = "\n".join([", ".join(triple) for triple in triples])
         return formatted_str
 
-    def format_as_paths(self, by: str) -> str:
+    def format_as_paths(self, by: str = "label") -> str:
         # count the number of times each entity appears as a subject
         subject_entities = [
             attributes["subject"] for _, attributes in self.relations.items()

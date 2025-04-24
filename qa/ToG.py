@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 from lm.llm import LLM
 from lm.ner import NER
-from kg import KG
+from graph.kg import KG
 from qa import QA
 from utils.similarity import get_fuzzy_best_match, get_cosine_similarity_best_match
 
