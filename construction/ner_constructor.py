@@ -9,8 +9,7 @@ import ast
 from typing import Optional
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from lm.ner import NER
-from lm.llm import LLM
+from lm import NER, LLM
 
 
 class NERConstructor:
@@ -153,7 +152,7 @@ class NERConstructor:
 if __name__ == "__main__":
     import json
     from datetime import datetime
-    from data_loader.data_loader import WikiDataLoader
+    from data_loader import WikiDataLoader
 
     CHUNK_INFO_LIST_PATH = "chunk_info_list.json"
 

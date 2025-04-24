@@ -5,7 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import os
 import logging
-from qa import QA
+from qa.QA import QA
 from lm.llm import LLM
 from utils.similarity import get_cosine_similarity_best_match
 

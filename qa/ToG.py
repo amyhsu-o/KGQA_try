@@ -7,10 +7,9 @@ from typing import Optional
 import ast
 import logging
 from datetime import datetime
-from lm.llm import LLM
-from lm.ner import NER
-from graph.kg import KG
-from qa import QA
+from lm import LLM, NER
+from graph import KG
+from qa.QA import QA
 from utils.similarity import get_fuzzy_best_match, get_cosine_similarity_best_match
 
 
@@ -178,9 +177,7 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
         self.llm_model = LLM(verbose=llm_verbose, logger=self.logger)
         self.kg = kg
         self.top_n = top_n
-        self.query_topic_entities_select_method = (
-            query_topic_entities_select_method
-        )
+        self.query_topic_entities_select_method = query_topic_entities_select_method
         self.scoring_method = scoring_method
         if scoring_method == "embedding":
             self.logger.info("Get entities & relations embedding...")

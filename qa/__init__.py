@@ -1,11 +1,6 @@
-from abc import ABC, abstractmethod
+from .naiveRAG import NaiveRAG
+from .ToG import ToG
+from .FastToG import FastToG
 
 
-class QA(ABC):
-    @abstractmethod
-    def retrieve(self, query: str) -> any:
-        pass
-
-    @abstractmethod
-    def answer(self, query: str) -> str:
-        pass
+__all__ = ["NaiveRAG", "ToG", "FastToG"]
