@@ -7,10 +7,13 @@ from typing import Optional
 import ast
 import logging
 from datetime import datetime
-from lm.llm import LLM
-from lm.ner import NER
-from kg import KG
-from qa import QA
+import copy
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import numpy as np
+from lm import LLM, NER
+from graph import KG
+from qa.QA import QA
 from utils.similarity import get_fuzzy_best_match, get_cosine_similarity_best_match
 
 
@@ -178,9 +181,7 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
         self.llm_model = LLM(verbose=llm_verbose, logger=self.logger)
         self.kg = kg
         self.top_n = top_n
-        self.query_topic_entities_select_method = (
-            query_topic_entities_select_method
-        )
+        self.query_topic_entities_select_method = query_topic_entities_select_method
         self.scoring_method = scoring_method
         if scoring_method == "embedding":
             self.logger.info("Get entities & relations embedding...")
@@ -324,6 +325,10 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
             "early_stop": early_stop,
             "reasoning_response": reasoning_response,
         }
+
+        # save the final retrieved graph
+        if root_path is not None:
+            self._save_reasoning_graph(used_kg, root_path)
         return retrieval_records
 
     def _get_topic_entities(self, query: str, used_kg: KG) -> dict[str, float]:
@@ -738,6 +743,51 @@ A: """
             data_sufficient = True
 
         return data_sufficient, response
+
+    def _save_reasoning_graph(self, used_kg: KG, root_path: str) -> None:
+        # copy graph
+        graph = copy.deepcopy(self.kg)
+        for node in graph.nodes():
+            del graph.nodes[node]["color"]
+
+        # color map
+        max_round = max(
+            [
+                info["round"]
+                for _, _, info in used_kg.edges(data=True)
+                if "round" in info
+            ]
+        )
+        cmap = plt.get_cmap("turbo")
+        gradient = np.linspace(0, 1, max_round)
+        colors = [mcolors.to_hex(cmap(val)) for val in gradient]
+
+        # apply color
+        for node1, node2, info in used_kg.edges(data=True):
+            if "round" in info:
+                graph.nodes[node1]["color"] = min(
+                    graph.nodes[node1].get("color", max_round), info["round"] - 1
+                )
+                graph.nodes[node2]["color"] = min(
+                    graph.nodes[node2].get("color", max_round), info["round"] - 1
+                )
+                for key in graph[node1][node2]:
+                    graph.edges[node1, node2, key]["color"] = min(
+                        graph.edges[node1, node2, key].get("color", max_round),
+                        info["round"] - 1,
+                    )
+        for node in graph.nodes():
+            color_id = graph.nodes[node].get("color", None)
+            if isinstance(color_id, int):
+                graph.nodes[node]["color"] = colors[color_id]
+        for node1, node2, _ in graph.edges(data=True):
+            for key in graph[node1][node2]:
+                color_id = graph.edges[node1, node2, key].get("color", None)
+                if isinstance(color_id, int):
+                    graph.edges[node1, node2, key]["color"] = colors[color_id]
+
+        # save graph
+        graph.save_graph(f"{root_path}/final.html")
 
     def answer(self, query: str, root_path: Optional[str] = None) -> str:
         start_time = datetime.now()
