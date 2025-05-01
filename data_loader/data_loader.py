@@ -5,6 +5,7 @@ from tqdm import tqdm
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import wikipedia
 from bs4 import BeautifulSoup
+from lm import LLM
 
 
 class DataLoader(ABC):
@@ -12,42 +13,6 @@ class DataLoader(ABC):
     >>> chunks = DataLoader.chunk(content)
     """
 
-    @abstractmethod
-    def load_contents(self, **kwargs):
-        pass
-
-    @staticmethod
-    def chunk(content: str) -> list[str]:
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=600, chunk_overlap=50, separators=["\n\n", "\n", ". "]
-        )
-        chunks = text_splitter.split_text(content)
-        return chunks
-
-    @staticmethod
-    def get_source_label(index: int, title: str) -> str:
-        return f"({index}) {title}"
-
-
-class WikiDataLoader(DataLoader):
-    def load_contents(self, **kwargs) -> dict[str, str]:
-        """wikipedia title names (titles=): list[str], are required
-
-        >>> data_loader = WikiDataLoader()
-        >>> titles_content_dict = data_loader.load_contents(titles=["Tom Hanks", "Brad Pitt"])
-        """
-        if "titles" not in kwargs:
-            raise ValueError("Need to input title name")
-
-        titles = kwargs["titles"]
-        titles_content_dict = {}
-        for idx, title in enumerate(titles):
-            content = wikipedia.page(title=title, auto_suggest=False).content
-            titles_content_dict[self.get_source_label(idx, title)] = content
-        return titles_content_dict
-
-
-class CRAGDataLoader(DataLoader):
     evaluation_prompt = """
 # Task: 
 You are given a Question, a model Prediction, and a list of Ground Truth answers, judge whether the model Prediction matches any answer from the list of Ground Truth answers. Follow the instructions step by step to make a judgement. 
@@ -74,6 +39,74 @@ Prediction: I am sorry I don't know.
 Accuracy: False
 """
 
+    @abstractmethod
+    def load_contents(self, **kwargs):
+        pass
+
+    @staticmethod
+    def chunk(content: str) -> list[str]:
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=600, chunk_overlap=50, separators=["\n\n", "\n", ". "]
+        )
+        chunks = text_splitter.split_text(content)
+        return chunks
+
+    @staticmethod
+    def get_source_label(index: int, title: str) -> str:
+        return f"({index}) {title}"
+
+    @staticmethod
+    def evaluate_answer(
+        query: str,
+        prediction: str,
+        correct_answers: list[str],
+        llm_verbose=False,
+        logger=None,
+    ) -> dict[str, any]:
+        """evaluate answer with LLM"""
+        llm = LLM(verbose=llm_verbose, logger=logger)
+        user_prompt = f"""Question: {query}
+Ground truth: {correct_answers}
+
+Prediction:
+{prediction}"""
+        response = llm.chat(
+            [
+                {"role": "system", "content": DataLoader.evaluation_prompt},
+                {
+                    "role": "user",
+                    "content": user_prompt,
+                },
+            ]
+        )
+        response = llm.parse_response(response, r"(\{\n.*?\n\})", {"answer": str})
+        if len(response) == 0:
+            return False
+        if "true" in response[0]["answer"].lower():
+            return True
+        else:
+            return False
+
+
+class WikiDataLoader(DataLoader):
+    def load_contents(self, **kwargs) -> dict[str, str]:
+        """wikipedia title names (titles=): list[str], are required
+
+        >>> data_loader = WikiDataLoader()
+        >>> titles_content_dict = data_loader.load_contents(titles=["Tom Hanks", "Brad Pitt"])
+        """
+        if "titles" not in kwargs:
+            raise ValueError("Need to input title name")
+
+        titles = kwargs["titles"]
+        titles_content_dict = {}
+        for idx, title in enumerate(titles):
+            content = wikipedia.page(title=title, auto_suggest=False).content
+            titles_content_dict[self.get_source_label(idx, title)] = content
+        return titles_content_dict
+
+
+class CRAGDataLoader(DataLoader):
     def load_query_info(self, query_ids: list[int]) -> dict[int, dict[str, any]]:
         """output format
         - key: query_id
@@ -150,6 +183,81 @@ Accuracy: False
     def _parse_html(self, text: str) -> str:
         soup = BeautifulSoup(text, "html.parser")
         return soup.get_text(" ", strip=True)
+
+
+class MuSiQueDataLoader(DataLoader):
+    @staticmethod
+    def get_decomposition_type(decomposition_process: list[dict[str, any]]) -> int:
+        """decomposition_process: from question_decomposition"""
+        if len(decomposition_process) == 2:
+            return 0
+        if len(decomposition_process) == 3:
+            if "#1" in decomposition_process[2]["question"]:
+                return 2
+            else:
+                return 1
+        if len(decomposition_process) == 4:
+            if "#2" in decomposition_process[3]["question"]:
+                return 5
+            elif "#1" in decomposition_process[2]["question"]:
+                return 4
+            else:
+                return 3
+
+    def load_query_info(self, query_ids: list[int]) -> dict[int, dict[str, any]]:
+        """output format
+        - key: query_id
+        - value: query_info
+            - key: 'id', 'paragraphs', 'question', 'question_decomposition', 'answer', 'answer_aliases', 'answerable', 'decomposition_type'
+        """
+        MUSIQUE_DATA_PATH = "./data/musique_ans_v1.0_dev.jsonl"
+
+        queries_info_dict = {}
+        with open(MUSIQUE_DATA_PATH) as f:
+            for idx, line in enumerate(f):
+                if idx in query_ids:
+                    data = json.loads(line)
+                    data["decomposition_type"] = self.get_decomposition_type(
+                        data["question_decomposition"]
+                    )
+                    queries_info_dict[idx] = data
+                if idx == max(query_ids):
+                    break
+        return queries_info_dict
+
+    def load_contents(
+        self, **kwargs
+    ) -> tuple[dict[int, dict[str, any]], dict[int, dict[str, str]]]:
+        """query_ids: list[int], is required
+
+        queries_info_dict
+        - key: query_id
+        - value: query_info
+            - key: 'id', 'paragraphs', 'question', 'question_decomposition', 'answer', 'answer_aliases', 'answerable', 'decomposition_type'
+
+        queries_content_dict
+        - key: query_id
+        - value: dict of page_content
+        """
+
+        if "query_ids" not in kwargs:
+            raise ValueError("Need to input query_ids")
+
+        query_ids = kwargs["query_ids"]
+        queries_info_dict = self.load_query_info(query_ids)
+
+        queries_content_dict = {}
+        for query_id in query_ids:
+            query_info = queries_info_dict[query_id]
+            contents = {
+                self.get_source_label(paragraph["idx"], paragraph["title"]): paragraph[
+                    "paragraph_text"
+                ]
+                for paragraph in query_info["paragraphs"]
+            }
+            queries_content_dict[query_id] = contents
+
+        return queries_info_dict, queries_content_dict
 
 
 if __name__ == "__main__":

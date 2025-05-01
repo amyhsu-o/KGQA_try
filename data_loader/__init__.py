@@ -1,3 +1,3 @@
-from .data_loader import WikiDataLoader, CRAGDataLoader
+from .data_loader import WikiDataLoader, CRAGDataLoader, MuSiQueDataLoader
 
-__all__ = ["WikiDataLoader", "CRAGDataLoader"]
+__all__ = ["WikiDataLoader", "CRAGDataLoader", "MuSiQueDataLoader"]
