@@ -140,6 +140,18 @@ class KG(nx.MultiGraph):
             nt.template = Template(f.read())
 
         nt.from_nx(self)
+
+        # apply color from nx
+        for node in nt.nodes:
+            node["color"] = self.nodes[node["id"]].get("color", "lightgray")
+        for edge in nt.edges:
+            node1, node2 = edge["from"], edge["to"]
+            edge_data = self.get_edge_data(node1, node2)
+            for data in edge_data.values():
+                edge["color"] = data.get("color", "lightgray")
+                if edge["color"] != "lightgray":
+                    break
+
         nt.force_atlas_2based()
         nt.show(path)
 

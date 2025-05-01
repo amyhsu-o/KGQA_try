@@ -6,6 +6,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import logging
 import re
 from datetime import datetime
+from typing import Optional
+import copy
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import numpy as np
 import networkx as nx
 from lm import LLM
 from graph import KG, Community
@@ -264,7 +269,7 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
         self,
         kg: KG,
         search_width: int = 3,
-        search_depth: int = 5,
+        search_depth: int = 10,
         search_max_hop: int = 3,
         search_multi_center: bool = False,
         community_max_size: int = 5,
@@ -295,7 +300,7 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
         self.update_hist_community_diff = update_hist_community_diff
         self.integrate_reasoning_response = integrate_reasoning_response
 
-    def retrieve(self, query: str) -> dict[str, any]:
+    def retrieve(self, query: str, root_path: Optional[str] = None) -> dict[str, any]:
         # === initial phase ===
         self.logger.info("=== Round 1 ===")
         # get header communities
@@ -312,7 +317,6 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
         while not is_sufficient:
             step_count += 1
             self.logger.info(f"=== Round {step_count} ===")
-            print(f"=== Round {step_count} ===")
 
             num_of_failed = 0
             used_center_nodes = self._get_used_center_nodes(reasoning_chains)
@@ -329,7 +333,7 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
                     continue
                 else:
                     # update differences in the last community
-                    if self.update_hist_community_diff:
+                    if step_count == 2 or self.update_hist_community_diff:
                         # update last community in the reasoning chain
                         last_community = reasoning_chain[-1]
                         all_nodes = set(last_community.nodes())
@@ -367,6 +371,12 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
             "early_stop": not is_sufficient,
             "step_count": step_count,
         }
+
+        # save reasoning graph
+        if root_path is not None:
+            if not os.path.exists(root_path):
+                os.makedirs(root_path)
+            self._save_reasoning_graph(reasoning_chains, root_path)
 
         return retrieval_records
 
@@ -625,7 +635,9 @@ Your choice:
         chain_text_list = []
         for i, comm in enumerate(reasoning_chain):
             comm_text = comm.format_as_triples()
-            if i > 0:
+            if i == 0 and len(comm_text) > 0:
+                chain_text_list.append(comm_text)
+            elif i > 0:
                 edges_between_comms = Community.get_edges_between_comms(
                     comm, reasoning_chain[i - 1]
                 )
@@ -635,9 +647,13 @@ Your choice:
                         for edge in edges_between_comms
                     ]
                 )
-                if len(edge_text) > 0:
-                    comm_text = edge_text + "\n\n" + comm_text
-            chain_text_list.append(comm_text)
+
+                if len(comm_text) == 0 and len(edge_text) != 0:
+                    chain_text_list.append(edge_text)
+                elif len(comm_text) != 0 and len(edge_text) == 0:
+                    chain_text_list.append(comm_text)
+                elif len(comm_text) != 0 and len(edge_text) != 0:
+                    chain_text_list.append(edge_text + "\n\n" + comm_text)
         return "\n\n".join(chain_text_list)
 
     def _reasoning(self, query: str, reasoning_chains: list[list[Community]]) -> bool:
@@ -694,9 +710,67 @@ A:"""
                 used_center_nodes.add(comm.center_node)
         return list(used_center_nodes)
 
-    def answer(self, query: str) -> str:
+    def _save_reasoning_graph(
+        self, reasoning_chains: list[list[Community]], root_path: str
+    ) -> None:
+        # copy graph
+        graph = copy.deepcopy(self.kg)
+        for node in graph.nodes():
+            del graph.nodes[node]["color"]
+
+        # color map
+        max_round = max([len(chain) for chain in reasoning_chains])
+        cmap = plt.get_cmap("turbo")
+        gradient = np.linspace(0, 1, max_round * 2 - 1)
+        colors = [mcolors.to_hex(cmap(val)) for val in gradient]
+
+        # apply color
+        for chain in reasoning_chains:
+            for idx, comm in enumerate(chain):
+                for node1, node2, info in comm.edges(data=True):
+                    graph.nodes[node1]["color"] = min(
+                        graph.nodes[node1].get("color", max_round * 2), idx * 2
+                    )
+                    graph.nodes[node2]["color"] = min(
+                        graph.nodes[node2].get("color", max_round * 2), idx * 2
+                    )
+                    for key in graph[node1][node2]:
+                        graph.edges[node1, node2, key]["color"] = min(
+                            graph.edges[node1, node2, key].get("color", max_round * 2),
+                            idx * 2,
+                        )
+                if idx > 0:
+                    for info in Community.get_edges_between_comms(comm, chain[idx - 1]):
+                        node1 = info["subject"]
+                        node2 = info["object"]
+                        if "color" not in graph.nodes[node1]:
+                            graph.nodes[node1]["color"] = idx * 2 - 1
+                        if "color" not in graph.nodes[node2]:
+                            graph.nodes[node2]["color"] = idx * 2 - 1
+
+                        for key in graph[node1][node2]:
+                            graph.edges[node1, node2, key]["color"] = min(
+                                graph.edges[node1, node2, key].get(
+                                    "color", max_round * 2
+                                ),
+                                idx * 2 - 1,
+                            )
+        for node in graph.nodes():
+            color_id = graph.nodes[node].get("color", None)
+            if isinstance(color_id, int):
+                graph.nodes[node]["color"] = colors[color_id]
+        for node1, node2, _ in graph.edges(data=True):
+            for key in graph[node1][node2]:
+                color_id = graph.edges[node1, node2, key].get("color", None)
+                if isinstance(color_id, int):
+                    graph.edges[node1, node2, key]["color"] = colors[color_id]
+
+        # save graph
+        graph.save_graph(f"{root_path}/final.html")
+
+    def answer(self, query: str, root_str: Optional[str] = None) -> str:
         start_time = datetime.now()
-        retrieval_records = self.retrieve(query)
+        retrieval_records = self.retrieve(query, root_str)
 
         reasoning_chains = retrieval_records["reasoning_chain"]
         # logging reasoning chain
