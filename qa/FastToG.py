@@ -5,18 +5,17 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import logging
 import re
-import random
 from datetime import datetime
 import networkx as nx
 from lm import LLM
 from graph import KG, Community
 from graph.community_algo.louvain import louvain_algo
 from qa.QA import QA
-from utils.similarity import get_fuzzy_best_match
+from utils.similarity import get_fuzzy_best_match, get_cosine_similarity_best_match
 
 
 class FastToG(QA):
-    extract_topic_entities_prompt = """Please retrieve 3 topic entities that contribute to answering the following question, and rate their contribution on a scale from 0 to 1. The scores must sum to 1.
+    extract_topic_entities_prompt = """Please retrieve {top_k} topic entities that contribute to answering the following question, and rate their contribution on a scale from 0 to 1. The scores must sum to 1.
 Q: Name the president of the country whose main spoken language was Brahui in 1980?
 A:
 1. {{Brahui Language (Score: 0.4)}}: This is the key clue in the question and helps identify the country being referred to.
@@ -87,11 +86,12 @@ Make sure to follow the format of the example.
 """
 
     community_reasoning_triple_prompt = """
-Given the context (knowledge triples) and a question Q, you are asked to answer the question in curly brackets like {Answer} if you can or {Unknown} if you can not. 
+Given a question and the associated retrieved knowledge graphs, you are asked to answer whether it's sufficient for you to answer the question with these triplets and your knowledge (Yes or No). Make sure to include {Yes} or {No} in your answer.
+
 Tips for solution: 
 First, please rewrite the question into different basic questions. 
 Second, search the context for the information needed to answer these questions. 
-Finally, organize all the information and your knowledge to answer.
+Finally, organize all the information and your knowledge to answer {Yes} or {No}.
 
 context:
 1. 
@@ -105,11 +105,11 @@ Yamaji Motoharu, military rank, general
 
 Q: Viscount Yamaji Motoharu was a general in the early Imperial Japanese Army which belonged to which Empire ?
 
-A: 
+A: {Yes}
 First, the question can be rewrote as: Viscount Yamaji Motoharu was a general of the early Imperial Japanese Army. Which empire did he belong to? 
 Second, Based on the context, Viscount Yamaji Motoharu, who was a general in the early Imperial Japanese Army, belonged to the Empire of Japan.
 Third, to my knowledge, Viscount Yamaji Motoharu was a general in the early Imperial Japanese Army, which belonged to the Empire of Japan,  which also confirmed by the context.
-To sum up, the answer is {Empire of Japan}.
+To sum up, the answer is Empire of Japan.
 
 context:
 1. 
@@ -129,11 +129,11 @@ Steve Bisciotti, sport, American football
 
 Q: Who is the coach of the team owned by the Steve Bisciotti?
 
-A: 
+A: {Yes}
 First, the problem can be rewrote as: which team is owned by Steve Bisciotti ? who is the coach of that team ?
 Second, context 1 provides geographical information about Millersville. Context 2 lists some football team of National Football League. Context 3 memtioned that Steve Bisciotti is American football player.
 Third, context do not directly reveal the current coach of the team owned by Steve Bisciotti. To my knowledge, Steve Bisciotti is the owner of Baltimore Ravens, and the coach of Baltimore Ravens is John Harbaugh. 
-To sum up, the answer is {John Harbaugh}.
+To sum up, the answer is John Harbaugh.
 
 context:
 1. 
@@ -150,11 +150,11 @@ John Newcombe, country of citizenship, Australia
 
 Q: John Newcombe is younger than Květa Peschke, is it true or false? 
 
-A: 
+A: {Yes} 
 First, the problem do not need to rewrote beacause it is clear. To solve the problem, we should compare the age or birthday about John Newcombe and Květa Peschke.
 Second, context 2 mentioned that John Newcombe was born in 1944 and context 3 mentioned that Květa Peschke was born in 1975. 
 Third, compare the above birthday, John Newcomb is not younger than Květa Peschke.
-To sum up, the answer is {false}.
+To sum up, the answer is false.
 
 context:
 1. 
@@ -171,13 +171,14 @@ Fort Worth Convention Center, occupant, San Antonio Spurs
 
 Q: At what stadium did Mychal George Thompson play home games with the San Antonio Spurs?
 
-A: 
+A: {No}
 First, the question can be broken down into sub-questions: What team did Mychal George Thompson play for? What is the home venue of the San Antonio Spurs?
 Second, context by context: Context 1 mentions that the San Antonio Spurs are occupants of the AT&T Center, which is their home venue. Context 2 incorrectly states that the San Antonio Spurs are the home venue of Alamodome and Fort Worth Convention Center; it should have said they used to play at these venues before moving to AT&T Center. Context 3 says the Fort Worth Convention Center is located in Texas and is associated with the San Antonio Spurs.
 Finally, organizing the information and my knowledge:
 The San Antonio Spurs currently play their home games at the AT&T Center. The historical venues include Alamodome and the Fort Worth Convention Center. If Mychal George Thompson played with the San Antonio Spurs, he could have played at one of these venues, depending on the period he was associated with the team.
 Because the context does not specify when Mychal George Thompson played for the San Antonio Spurs or if he did, we cannot explicitly answer which stadium he played at. However, based on the common knowledge, he did not play for the Spurs.
-To sum up, the answer is {Unknown}.
+To sum up, the answer is Unknown.
+
 
 context:
 1. 
@@ -205,13 +206,20 @@ Winston Science Fiction, publisher, John C. Winston Company
 
 Q: What is the climate in the area around the Pennsylvania Convention Center?
 
-A: 
+A: {Yes}
 First, the question can be rewrote as: Where is Pennsylvania Convention Center? What is the climate there ?
 Second, Context 1 mentions the location of the manufacturer of Pennsylvania Convention Center. Context 2 talk about some design and construction of Wilson Brothers & Company. Context 3 provides location information about the Pennsylvania Convention Center.
 Third, the Pennsylvania Convention Center is located in Arch Street, Old City, Philadelphia. We can sure that Philadelphia is the city in the Pennsylvania. To my knowledge, the climate in State Pennsylvania is classified as a humid subtropical climate.
-To sum up, the answer is {humid subtropical climate}.
+To sum up, the answer is humid subtropical climate.
 
-Try to use the given context to answer the question only, don't use external knowledge. If you can not find the answer, please answer {Unknown}.
+Try to use the given context to answer the question only, don't use external knowledge.
+"""
+
+    check_reasoning_result_prompt = """
+Given a question and a comment about whether the given context can answer the question.
+If the comment says the context *can* answer the question, answer {Yes}. 
+If the comment says the context *cannot* answer the question, answer {No}.
+Please answer {Yes} or {No} only, without explanation.
 """
 
     answer_prompt = """Given a question and the associated retrieved knowledge graph triplets (entity, relation, entity), you are asked to answer the question with these triplets and your knowledge.
@@ -258,62 +266,59 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
         search_width: int = 3,
         search_depth: int = 5,
         search_max_hop: int = 3,
-        search_decline_rate: float = 0,  # original setting: 0.5
+        search_multi_center: bool = False,
         community_max_size: int = 5,
         community_max_candidate: int = 8,
+        update_hist_community_diff: bool = False,
+        integrate_reasoning_response: bool = False,
         llm_verbose: bool = False,
         logger: logging.Logger = logging.getLogger(),
     ):
         self.logger = logger
         self.kg = kg
         self.llm_model = LLM(verbose=llm_verbose, logger=self.logger)
+
+        # follow original setting
         self.search_width = search_width
         self.search_depth = search_depth
         self.search_max_hop = search_max_hop
-        self.search_decline_rate = search_decline_rate
         self.community_max_size = community_max_size
         self.community_max_candidate = community_max_candidate
 
+        """improvement
+        `search_multi_center`: when get n hop subgraph in local community search, using multiple center nodes with similar semantics with original center node to extract subgraph
+        `update_hist_community_diff`: update last community in the reasoning chain, when local community search using a little bit different nodes to form the center community in next round
+        """
+        self.search_multi_center = search_multi_center
+        if self.search_multi_center:
+            self.kg.entities_emb = self.llm_model.embed(list(self.kg.entities.keys()))
+        self.update_hist_community_diff = update_hist_community_diff
+        self.integrate_reasoning_response = integrate_reasoning_response
+
     def retrieve(self, query: str) -> dict[str, any]:
         # === initial phase ===
-        # get start community
-        start_node = self._get_start_node(query)
-        logger.info(f"start community: {start_node}")
-
-        # get header community for each reasoning chain
         self.logger.info("=== Round 1 ===")
-        center_community, header_communities = self._local_community_search(
-            query, Community(self.kg, [start_node]), self.search_width, [], [start_node]
-        )
-
-        if len(header_communities) == 0:
-            retrieval_records = {
-                "settings": vars(self),
-                "reasoning_chain": [[center_community]],
-                "early_stop": True,
-                "step_count": 0,
-            }
-            return retrieval_records
+        # get header communities
+        start_nodes_score = self._get_start_nodes(query)
+        self.logger.info(f"header communities: {start_nodes_score}")
 
         # add header communities to reasoning chains
-        reasoning_chains = [[center_community] for _ in range(len(header_communities))]
-        self.logger.info("selected community:")
-        for idx, comm in enumerate(header_communities):
-            self.logger.info(comm)
-            reasoning_chains[idx].append(comm)
+        reasoning_chains = [list() for _ in range(len(start_nodes_score))]
+        for idx, start_node in enumerate(start_nodes_score):
+            reasoning_chains[idx].append(Community(self.kg, [start_node]))
 
-        # ask LLM to try to answer the question
-        is_sufficient = self._reasoning(query, reasoning_chains)
-
+        is_sufficient = False
         step_count = 1
         while not is_sufficient:
             step_count += 1
             self.logger.info(f"=== Round {step_count} ===")
+            print(f"=== Round {step_count} ===")
 
             num_of_failed = 0
             used_center_nodes = self._get_used_center_nodes(reasoning_chains)
             for idx, reasoning_chain in enumerate(reasoning_chains):
                 self.logger.info(f"--- Chain {idx} ---")
+
                 # get next community
                 center_community, selected_communities = self._local_community_search(
                     query, reasoning_chain[-1], 1, reasoning_chain, used_center_nodes
@@ -323,6 +328,19 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
                     num_of_failed += 1
                     continue
                 else:
+                    # update differences in the last community
+                    if self.update_hist_community_diff:
+                        # update last community in the reasoning chain
+                        last_community = reasoning_chain[-1]
+                        all_nodes = set(last_community.nodes())
+                        update = False
+                        for node in center_community.nodes():
+                            if node not in all_nodes:
+                                all_nodes.add(node)
+                                update = True
+                        if update:
+                            reasoning_chain[-1] = Community(self.kg, list(all_nodes))
+
                     # add selected communities to reasoning chain
                     selected_community = selected_communities[0]
                     self.logger.info(f"selected community:\n{selected_community}")
@@ -330,30 +348,38 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
 
             if num_of_failed == len(reasoning_chains):
                 # all reasoning chains can not find new community
+                self.logger.info("No more communities")
                 break
 
             # ask LLM to try to answer the question
-            is_sufficient = self._reasoning(query, reasoning_chains)
+            is_sufficient, reason = self._reasoning(query, reasoning_chains)
 
             if step_count == self.search_depth:
                 # reach maximum search depth
+                self.logger.info("Reach maximum search depth")
                 break
 
         # collect information
         retrieval_records = {
             "settings": vars(self),
             "reasoning_chain": reasoning_chains,
+            "reasoning_response": reason if is_sufficient else None,
             "early_stop": not is_sufficient,
             "step_count": step_count,
         }
 
         return retrieval_records
 
-    def _get_start_node(self, query: str) -> str:
+    def _get_start_nodes(self, query: str) -> str:
         # ask LLM to extract topic entities
         response = self.llm_model.chat(
             [
-                {"role": "system", "content": FastToG.extract_topic_entities_prompt},
+                {
+                    "role": "system",
+                    "content": FastToG.extract_topic_entities_prompt.format(
+                        top_k=self.search_width
+                    ),
+                },
                 {"role": "user", "content": f"Q: {query}"},
             ]
         )
@@ -362,10 +388,53 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
             r"(?:\{|\*{2})(.*?)\s*\(Score:\s*([0-9.]+)\)[ :]*(?:\}|\*{2})",
             {"entity": str, "score": float},
         )
-        best_matches = list(
-            get_fuzzy_best_match(results[0]["entity"], self.kg.entities)
-        )
-        return best_matches[0]
+        results = self._match_score("entity", results, self.kg.entities.keys())
+
+        return results
+
+    def _match_score(
+        self,
+        label_name: str,
+        score_results: list[dict[str, any]],
+        match_targets: list[str],
+        threshold: float = None,
+    ) -> dict[str, float]:
+        """
+
+        score_results format: top_n with score
+
+        [{'relation': 'directed', 'score': 0.6},
+        {'relation': 'collaborated with', 'score': 0.3},
+        {'relation': 'was directed by', 'score': 0.1}]
+
+        return format: top_n matched with score
+
+        {'directed': 0.6, 'collaborated with': 0.3, 'was directed by': 0.1}
+        """
+        # match with KG nodes or edges
+        matched_results = {
+            result[label_name]: result["score"]
+            for result in score_results
+            if result[label_name] in match_targets
+        }
+
+        for result in score_results:
+            match_subject = result[label_name].lower()
+            score = result["score"]
+            if match_subject not in matched_results:
+                if threshold:
+                    best_match = get_fuzzy_best_match(
+                        match_subject, match_targets, threshold=threshold
+                    )
+                else:
+                    best_match = get_fuzzy_best_match(match_subject, match_targets)
+                best_match = list(best_match.keys())
+                if len(best_match) != 0:
+                    matched_results[best_match[0]] = (
+                        matched_results.get(best_match[0], 0) + score
+                    )
+
+        return matched_results
 
     def _local_community_search(
         self,
@@ -378,12 +447,29 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
         """return top_k selected communities from center community, which have the same center node as from_community"""
         for try_round in range(3):
             # 1. community detection -- find communities around center node
-            communities = self._community_detection(from_community)
+            if self.search_multi_center is False:
+                center_nodes = [from_community.center_node]
+            else:
+                center_nodes = list(
+                    get_cosine_similarity_best_match(
+                        self.kg.entities_emb[from_community.center_node],
+                        self.kg.entities_emb,
+                        threshold=0.8,
+                        top_n=5,
+                    ).keys()
+                )
+
+            self.logger.info(f"center nodes: {center_nodes}")
+            communities = self._community_detection(center_nodes)
 
             # 2. modularity-based coarse-pruning
             center_community = Community.get_belong_community(
                 communities, from_community.center_node
             )
+            if self.search_multi_center:
+                center_nodes = set(center_nodes + list(center_community.nodes()))
+                center_community = Community(self.kg, center_nodes)
+
             if len(hist_chain) == 0:
                 hist_chain = [center_community]
             neighbor_communities = Community.get_neighbor_communities(
@@ -424,50 +510,23 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
                 self.logger.warning(f"No community selected, try round {try_round}")
         return center_community, selected_communities
 
-    def _community_detection(self, from_community: Community) -> list[Community]:
+    def _community_detection(self, center_nodes: list[str]) -> list[Community]:
         """return local partitioned communities"""
         # 1. get n hops subgraph from starting node
-        subgraph = self._get_n_hop_subgraph(from_community)
+        subgraph = self._get_n_hop_subgraph(center_nodes)
 
         # 2. partition subgraph into communities
         partitions = louvain_algo(subgraph, self.community_max_size)
         communities = [Community(self.kg, list(partition)) for partition in partitions]
         return communities
 
-    def _get_n_hop_subgraph(self, from_community: Community) -> KG:
+    def _get_n_hop_subgraph(self, center_nodes: list[str]) -> KG:
         # get n hop subgraph
-        subgraph = nx.ego_graph(
-            self.kg, from_community.center_node, self.search_max_hop
+        subgraph = nx.compose_all(
+            [nx.ego_graph(self.kg, node, self.search_max_hop) for node in center_nodes]
         )
-
-        # random samples neighbor nodes at different hops with exponential decay; probability=\ro^{hop_count-1}
-        prev_hop_nodes = set(list(subgraph[from_community.center_node].keys()))
-        visited_nodes = {from_community.center_node}
-        visited_nodes.update(prev_hop_nodes)
-
-        for hop_count in range(2, self.search_max_hop + 1):
-            # find all nodes in current layer
-            current_hop_nodes = set()
-            for prev_node in prev_hop_nodes:
-                for neighbor_node in subgraph[prev_node].keys():
-                    if neighbor_node not in visited_nodes:
-                        current_hop_nodes.add(neighbor_node)
-
-            # random remove nodes in the current layer
-            removed_nodes = random.sample(
-                list(current_hop_nodes),
-                int(
-                    len(current_hop_nodes)
-                    * (1 - self.search_decline_rate ** (hop_count - 1))
-                ),
-            )
-            current_hop_nodes -= set(removed_nodes)
-            subgraph.remove_nodes_from(removed_nodes)
-
-            # update for next layer
-            visited_nodes.update(current_hop_nodes)
-            prev_hop_nodes = current_hop_nodes
-
+        for node in center_nodes:
+            self.logger.info(f"-- center node: {node} ({subgraph.degree(node)}) ")
         return subgraph
 
     def _community_coarse_pruning(
@@ -502,7 +561,9 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
                     for edge in edges_between_hist
                 ]
             )
-            option_text = edge_text + "\n" + option_text
+            if len(edge_text) > 0:
+                option_text = edge_text + "\n" + option_text
+
             candidates_text.append(option_text)
 
         ALPHABETS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -574,9 +635,10 @@ Your choice:
                         for edge in edges_between_comms
                     ]
                 )
-                comm_text = edge_text + "\n" + comm_text
+                if len(edge_text) > 0:
+                    comm_text = edge_text + "\n\n" + comm_text
             chain_text_list.append(comm_text)
-        return "\n".join(chain_text_list)
+        return "\n\n".join(chain_text_list)
 
     def _reasoning(self, query: str, reasoning_chains: list[list[Community]]) -> bool:
         # transform reasoning chains into text
@@ -599,16 +661,29 @@ A:"""
                 {"role": "user", "content": user_prompt},
             ]
         )
-        result = self.llm_model.parse_response(response, r"\{(.*?)\}", {"answer": str})
+        result = self.llm_model.parse_response(
+            response.lower(), r"\{([yes|no]*)\}", {"answer": str}
+        )
 
         # check if the answer is valid
         if len(result) == 0:
-            return False
-
-        answer = result[0]["answer"].lower()
-        if "unknown" in answer:
-            return False
-        return True
+            verify_result = self.llm_model.chat(
+                [
+                    {
+                        "role": "system",
+                        "content": FastToG.check_reasoning_result_prompt,
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Question: {query}\n\nComment:\n{response}\n\nA:",
+                    },
+                ]
+            )
+            return "yes" in verify_result.lower(), response
+        elif len(result) == 1 and result[0]["answer"] == "yes":
+            return True, response
+        else:
+            return False, response
 
     def _get_used_center_nodes(
         self, reasoning_chains: list[list[Community]]
@@ -623,17 +698,37 @@ A:"""
         start_time = datetime.now()
         retrieval_records = self.retrieve(query)
 
-        # transform reasoning chains into text
         reasoning_chains = retrieval_records["reasoning_chain"]
+        # logging reasoning chain
+        self.logger.info("=== Reasoning Chains ===")
+        for idx, chain in enumerate(reasoning_chains):
+            self.logger.info(f"--- Chain {idx} ---")
+            for comm in chain:
+                self.logger.info(comm)
+
+        # transform reasoning chains into text
         reasoning_text_chains = [
             f"{idx}.\n{self._transform_chain_to_text(chain)}"
             for idx, chain in enumerate(reasoning_chains)
         ]
         context = "\n\n".join(reasoning_text_chains)
 
-        # ask LLM to try to answer the question
+        # ask LLM to answer the question
         system_prompt = FastToG.answer_prompt
-        user_prompt = f"""Knowledge Graph:
+        if (
+            self.integrate_reasoning_response
+            and retrieval_records["reasoning_response"] is not None
+        ):
+            user_prompt = f"""Knowledge Graph:
+{context}
+
+Hint:
+{retrieval_records["reasoning_response"]}
+
+Q: {query}
+A:"""
+        else:
+            user_prompt = f"""Knowledge Graph:
 {context}
 
 Q: {query}
@@ -648,6 +743,14 @@ A:"""
         )
         end_time = datetime.now()
 
+        # modify answering records
+        retrieval_records["settings"].pop("logger")
+        retrieval_records["settings"].pop("kg")
+        retrieval_records["settings"].pop("llm_model")
+        retrieval_records["reasoning_chain"] = [
+            len(retrieval_records["reasoning_chain"][i])
+            for i in range(len(retrieval_records["reasoning_chain"]))
+        ]
         answering_records = {
             **retrieval_records,
             "duration": str(end_time - start_time),
@@ -658,32 +761,4 @@ A:"""
 
 
 if __name__ == "__main__":
-    # query
-    query_id = 2
-    query = "where did the ceo of salesforce previously work?"
-
-    # KG
-    exp_dir = f"./exp_data/query_{query_id}"
-    chunk_info_list_paths = [
-        os.path.join(exp_dir, pathname)
-        for pathname in os.listdir(exp_dir)
-        if pathname.startswith("kg_info__")
-    ]
-    kg = KG(chunk_info_list_paths)
-    print(f"# of entities: {len(kg.entities)}")
-    print(f"# of relations: {len(kg.relations)}")
-
-    # logging
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    handler = logging.FileHandler("test.log", mode="w")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-
-    # FastToG
-    fasttog = FastToG(kg, logger=logger, llm_verbose=True)
-    # fasttog = FastToG(kg, logger=logger)
-    results = fasttog.answer(query)
-    logger.info(results)
-    print(results["prediction"])
+    pass

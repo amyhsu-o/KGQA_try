@@ -87,6 +87,10 @@ nodes={self.nodes()}
         edges = []
         for edge in comm1.outer_edges:
             if (
+                edge["subject"] in comm1.nodes() and edge["object"] in comm1.nodes()
+            ) or (edge["subject"] in comm2.nodes() and edge["object"] in comm2.nodes()):
+                continue
+            if (
                 edge["subject"] in comm1.nodes() and edge["object"] in comm2.nodes()
             ) or (edge["subject"] in comm2.nodes() and edge["object"] in comm1.nodes()):
                 edges.append(edge)
