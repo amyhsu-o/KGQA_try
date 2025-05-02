@@ -614,7 +614,7 @@ Your choice:
                     continue
                 comm_alphabet = re_result[0]
             comm_idx = ord(comm_alphabet) - ord("A")
-            if comm_idx >= len(candidate_communities):
+            if comm_idx < 0 or comm_idx >= len(candidate_communities):
                 continue
             community_scores[comm_idx] = max(
                 community_scores.get(comm_idx, 0), result["score"]
@@ -654,14 +654,17 @@ Your choice:
                     chain_text_list.append(comm_text)
                 elif len(comm_text) != 0 and len(edge_text) != 0:
                     chain_text_list.append(edge_text + "\n\n" + comm_text)
-        return "\n\n".join(chain_text_list)
+        return "\n\n".join(chain_text_list).strip()
 
     def _reasoning(self, query: str, reasoning_chains: list[list[Community]]) -> bool:
         # transform reasoning chains into text
-        reasoning_text_chains = [
-            f"{idx}.\n{self._transform_chain_to_text(chain)}"
-            for idx, chain in enumerate(reasoning_chains)
-        ]
+        reasoning_text_chains = []
+        idx = 0
+        for chain in reasoning_chains:
+            chain_text = self._transform_chain_to_text(chain)
+            if len(chain_text) > 0:
+                idx += 1
+                reasoning_text_chains.append(f"{idx}.\n{chain_text}")
         context = "\n\n".join(reasoning_text_chains)
 
         # ask LLM to try to answer the question
