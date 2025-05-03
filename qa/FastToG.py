@@ -327,10 +327,22 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
                 center_community, selected_communities = self._local_community_search(
                     query, reasoning_chain[-1], 1, reasoning_chain, used_center_nodes
                 )
+
+                # run again from header community when nothing retrieved
                 if len(selected_communities) == 0:
                     # no more communities
-                    num_of_failed += 1
-                    continue
+                    center_community, selected_communities = (
+                        self._local_community_search(
+                            query,
+                            reasoning_chain[0],
+                            1,
+                            reasoning_chain,
+                            used_center_nodes,
+                        )
+                    )
+                    if len(selected_communities) == 0:
+                        num_of_failed += 1
+                        continue
                 else:
                     # update differences in the last community
                     if step_count == 2 or self.update_hist_community_diff:
@@ -663,7 +675,6 @@ Your choice:
         for chain in reasoning_chains:
             chain_text = self._transform_chain_to_text(chain)
             if len(chain_text) > 0:
-                idx += 1
                 reasoning_text_chains.append(f"{idx}.\n{chain_text}")
         context = "\n\n".join(reasoning_text_chains)
 
