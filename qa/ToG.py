@@ -611,7 +611,7 @@ A: """
             )
             results = self.llm_model.parse_response(
                 response,
-                r"(?:\{|\*{2})\(([^()]+)\)\s*\(Score:\s*([0-9.]+)\)[ :]*(?:\}|\*{2})",
+                r"\{(.*?)\s*\(Score:\s*([0-9.]+)\)\s*\}",
                 {"triple": str, "score": float},
             )
             triples_str_list = [" | ".join(triple) for triple in triples_score]
