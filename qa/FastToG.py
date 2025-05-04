@@ -573,7 +573,7 @@ A: Based on the given knowledge triplets, we can infer that the National Anthem 
         # prepare candidate text
         candidates_text = []
         for comm in candidate_communities:
-            option_text = comm.format_as_triples()
+            option_text = str(comm)
             edges_between_hist = Community.get_edges_between_comms(
                 comm, hist_communities[-1]
             )
@@ -646,7 +646,7 @@ Your choice:
         # transform reasoning chain into text
         chain_text_list = []
         for i, comm in enumerate(reasoning_chain):
-            comm_text = comm.format_as_triples()
+            comm_text = str(comm)
             if i == 0 and len(comm_text) > 0:
                 chain_text_list.append(comm_text)
             elif i > 0:
@@ -676,6 +676,7 @@ Your choice:
             chain_text = self._transform_chain_to_text(chain)
             if len(chain_text) > 0:
                 reasoning_text_chains.append(f"{idx}.\n{chain_text}")
+                idx += 1
         context = "\n\n".join(reasoning_text_chains)
 
         # ask LLM to try to answer the question
